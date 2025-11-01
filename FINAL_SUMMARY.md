@@ -1,4 +1,4 @@
-# 🎉 DỰ ÁN HOÀN THÀNH - BẢO TÀNG THỜI BAO CẤP
+# 🎉 DỰ ÁN - BẢO TÀNG THỜI BAO CẤP
 
 ## ✨ Tổng quan hoàn chỉnh
 

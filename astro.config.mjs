@@ -7,4 +7,6 @@ export default defineConfig({
     vite: {
         plugins: [tailwindcss()],
     },
+    site: 'https://server-craftsman.github.io',
+    base: '/vnr202-web-app-astro',
 });

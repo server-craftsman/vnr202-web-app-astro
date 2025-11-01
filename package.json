@@ -1,0 +1,24 @@
+{
+  "name": "web-astro-vnr202",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Bảo Tàng Thời Bao Cấp - Trải nghiệm Tương tác về lịch sử Việt Nam 1975-1986",
+  "author": "VNR202 Team",
+  "license": "MIT",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^5.15.3"
+  },
+  "keywords": [
+    "bao-cap",
+    "vietnam-history",
+    "interactive-museum",
+    "astro",
+    "educational"
+  ]
+}

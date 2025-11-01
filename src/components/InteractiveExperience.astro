@@ -1,0 +1,256 @@
+---
+---
+
+<section class="experience-section" id="experience">
+	<div class="container">
+		<div class="section-header">
+			<h2 class="section-title">Trải nghiệm tương tác</h2>
+			<p class="section-subtitle">Tham gia và khám phá thời bao cấp</p>
+		</div>
+
+		<div class="experience-grid">
+			<div class="experience-card card-story">
+				<div class="card-icon">📖</div>
+				<h3>Kể chuyện lịch sử</h3>
+				<p>Lắng nghe những câu chuyện từ người dân thời bao cấp</p>
+				<button class="card-btn">Khám phá</button>
+			</div>
+
+			<div class="experience-card card-compare">
+				<div class="card-icon">⚖️</div>
+				<h3>So sánh đổi thay</h3>
+				<p>Xem sự khác biệt giữa thời bao cấp và hiện tại</p>
+				<button class="card-btn">So sánh</button>
+			</div>
+
+			<div class="experience-card card-virtual">
+				<div class="card-icon">🏪</div>
+				<h3>Cửa hàng ảo</h3>
+				<p>Tham quan cửa hàng mậu dịch thời bao cấp</p>
+				<button class="card-btn">Tham quan</button>
+			</div>
+
+			<div class="experience-card card-quiz">
+				<div class="card-icon">🎯</div>
+				<h3>Kiến thức & Câu đố</h3>
+				<p>Thử sức với các câu hỏi về thời kỳ này</p>
+				<button class="card-btn">Bắt đầu</button>
+			</div>
+		</div>
+
+		<div class="cta-section">
+			<div class="cta-content">
+				<h3>Chia sẻ câu chuyện của bạn</h3>
+				<p>Nếu bạn đã từng trải qua thời bao cấp, hãy chia sẻ câu chuyện của mình để thế hệ sau hiểu rõ hơn về lịch sử.</p>
+				<button class="cta-btn">Gửi câu chuyện</button>
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	.experience-section {
+		position: relative;
+		padding: 8rem 2rem;
+		background: linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 100%);
+		min-height: 100vh;
+	}
+
+	.container {
+		max-width: 1400px;
+		margin: 0 auto;
+	}
+
+	.section-header {
+		text-align: center;
+		margin-bottom: 6rem;
+		animation: fadeInUp 0.8s ease-out;
+	}
+
+	.section-title {
+		font-family: 'Playfair Display', serif;
+		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-weight: 700;
+		margin-bottom: 1rem;
+		background: linear-gradient(135deg, #ffffff 0%, #d4af37 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.section-subtitle {
+		font-size: 1.25rem;
+		color: rgba(255, 255, 255, 0.7);
+		max-width: 600px;
+		margin: 0 auto;
+	}
+
+	.experience-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 2rem;
+		margin-bottom: 6rem;
+	}
+
+	.experience-card {
+		background: rgba(255, 255, 255, 0.05);
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 24px;
+		padding: 3rem 2rem;
+		text-align: center;
+		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		cursor: pointer;
+		position: relative;
+		overflow: hidden;
+		opacity: 0;
+		animation: fadeInUp 0.6s ease-out forwards;
+	}
+
+	.experience-card::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 4px;
+		background: linear-gradient(90deg, #d4af37, #f4bf37);
+		transform: scaleX(0);
+		transform-origin: left;
+		transition: transform 0.4s ease;
+	}
+
+	.experience-card:hover {
+		transform: translateY(-10px);
+		background: rgba(255, 255, 255, 0.08);
+		border-color: rgba(212, 175, 55, 0.5);
+		box-shadow: 0 25px 50px rgba(212, 175, 55, 0.15);
+	}
+
+	.experience-card:hover::before {
+		transform: scaleX(1);
+	}
+
+	.card-icon {
+		font-size: 5rem;
+		margin-bottom: 1.5rem;
+		transition: transform 0.3s ease;
+		display: block;
+	}
+
+	.experience-card:hover .card-icon {
+		transform: scale(1.15) rotate(5deg);
+	}
+
+	.experience-card h3 {
+		font-size: 1.5rem;
+		font-weight: 600;
+		margin-bottom: 1rem;
+		color: #fff;
+	}
+
+	.experience-card p {
+		color: rgba(255, 255, 255, 0.7);
+		line-height: 1.8;
+		margin-bottom: 1.5rem;
+	}
+
+	.card-btn {
+		padding: 0.75rem 2rem;
+		background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(244, 191, 55, 0.2));
+		border: 1px solid rgba(212, 175, 55, 0.5);
+		border-radius: 50px;
+		color: #d4af37;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.3s ease;
+	}
+
+	.card-btn:hover {
+		background: linear-gradient(135deg, #d4af37, #f4bf37);
+		color: #0a0a0a;
+		transform: scale(1.05);
+		box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+	}
+
+	.cta-section {
+		margin-top: 6rem;
+		animation: fadeInUp 1s ease-out;
+	}
+
+	.cta-content {
+		background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(244, 191, 55, 0.05));
+		border: 2px solid rgba(212, 175, 55, 0.3);
+		border-radius: 30px;
+		padding: 4rem 3rem;
+		text-align: center;
+		max-width: 800px;
+		margin: 0 auto;
+	}
+
+	.cta-content h3 {
+		font-family: 'Playfair Display', serif;
+		font-size: 2.5rem;
+		margin-bottom: 1rem;
+		color: #d4af37;
+	}
+
+	.cta-content p {
+		font-size: 1.125rem;
+		line-height: 1.9;
+		color: rgba(255, 255, 255, 0.9);
+		margin-bottom: 2rem;
+	}
+
+	.cta-btn {
+		padding: 1rem 3rem;
+		background: linear-gradient(135deg, #d4af37, #f4bf37);
+		border: none;
+		border-radius: 50px;
+		color: #0a0a0a;
+		font-weight: 700;
+		font-size: 1.125rem;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+	}
+
+	.cta-btn:hover {
+		transform: translateY(-3px);
+		box-shadow: 0 15px 40px rgba(212, 175, 55, 0.5);
+	}
+
+	@media (max-width: 768px) {
+		.experience-section {
+			padding: 4rem 1rem;
+		}
+
+		.experience-grid {
+			grid-template-columns: 1fr;
+			gap: 1.5rem;
+		}
+
+		.experience-card {
+			padding: 2rem;
+		}
+
+		.cta-content {
+			padding: 3rem 2rem;
+		}
+
+		.cta-content h3 {
+			font-size: 2rem;
+		}
+	}
+
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(30px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+</style>

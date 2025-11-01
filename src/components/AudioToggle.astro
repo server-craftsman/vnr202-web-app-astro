@@ -1,0 +1,552 @@
+---
+import ambienceAudio from "../assets/ambience-retro.mp3";
+---
+
+<!-- Audio Player Container -->
+<div
+  class="fixed left-6 bottom-6 z-[9999] flex flex-col gap-3"
+  transition:persist
+>
+  <!-- Main Audio Toggle Button -->
+  <button
+    id="audio-toggle"
+    class="w-16 h-16 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-full shadow-2xl shadow-amber-500/40 hover:shadow-amber-500/60 hover:scale-110 transition-all duration-300 flex items-center justify-center group border-2 border-amber-400 relative"
+    title="Bật/Tắt âm thanh"
+  >
+    <!-- Volume Wave Icon (Playing) -->
+    <svg
+      id="volume-on-icon"
+      class="w-8 h-8 text-stone-950"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+      ></path>
+    </svg>
+
+    <!-- Volume Mute Icon (Paused) -->
+    <svg
+      id="volume-off-icon"
+      class="hidden w-8 h-8 text-stone-950"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+      ></path>
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+    </svg>
+
+    <!-- Pulse Ring (when playing) -->
+    <div
+      id="pulse-ring"
+      class="hidden absolute inset-0 rounded-full bg-amber-500 animate-ping opacity-20"
+    >
+    </div>
+
+    <!-- Playing Indicator -->
+    <div
+      id="playing-indicator"
+      class="hidden absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-stone-950 animate-pulse"
+    >
+    </div>
+  </button>
+
+  <!-- Smart Volume Popup, appears near toggle ONLY IF user clicks the toggle or dedicated gear button (auto-hide on focus lost) -->
+  <div
+    id="volume-control"
+    class="hidden bg-gradient-to-br from-stone-800/95 to-stone-900/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-4 pr-8 shadow-2xl relative min-w-[260px]"
+    tabindex="0"
+  >
+    <!-- Close Button top-right -->
+    <button
+      id="volume-close"
+      class="absolute right-2 top-2 w-7 h-7 flex items-center justify-center rounded-full bg-stone-700 hover:bg-stone-800 text-amber-300 hover:text-white transition-all"
+      title="Đóng"
+      tabindex="1"
+      type="button"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M6 6l12 12M6 18L18 6"></path>
+      </svg>
+    </button>
+    <div class="flex items-center gap-3 pl-1 pr-3 py-1">
+      <button
+        id="volume-down"
+        class="w-8 h-8 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg flex items-center justify-center transition-colors group"
+        tabindex="2"
+      >
+        <svg
+          class="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M20 12H4"></path>
+        </svg>
+      </button>
+      <input
+        type="range"
+        id="volume-slider"
+        min="0"
+        max="100"
+        value="70"
+        class="w-32 h-2 bg-stone-700 rounded-full appearance-none cursor-pointer slider"
+        tabindex="3"
+      />
+      <button
+        id="volume-up"
+        class="w-8 h-8 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg flex items-center justify-center transition-colors group"
+        tabindex="4"
+      >
+        <svg
+          class="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"></path>
+        </svg>
+      </button>
+      <div
+        class="text-amber-300 font-bold text-sm min-w-[3rem] text-center"
+        tabindex="5"
+      >
+        <span id="volume-display">70</span>%
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Audio Element -->
+<audio id="ambient-audio" loop preload="auto">
+  <source src={ambienceAudio} type="audio/mpeg" />
+  Your browser does not support audio.
+</audio>
+
+<style>
+  /* Custom Range Slider */
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, #d4af37, #f4bf37);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.5);
+    transition: all 0.2s;
+  }
+
+  .slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.8);
+  }
+
+  .slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, #d4af37, #f4bf37);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.5);
+  }
+
+  .slider::-webkit-slider-runnable-track {
+    background: linear-gradient(
+      to right,
+      #d4af37 var(--volume-percent, 70%),
+      #3c3c3c var(--volume-percent, 70%)
+    );
+    border-radius: 9999px;
+    height: 8px;
+  }
+</style>
+
+<script>
+  // UI Elements
+  const toggleBtn = document.getElementById(
+    "audio-toggle"
+  ) as HTMLButtonElement;
+  const volumeOn = document.getElementById("volume-on-icon");
+  const volumeOff = document.getElementById("volume-off-icon");
+  const audioEl = document.getElementById("ambient-audio") as HTMLAudioElement;
+  const volumeControl = document.getElementById("volume-control");
+  const volumeSlider = document.getElementById(
+    "volume-slider"
+  ) as HTMLInputElement;
+  const volumeDisplay = document.getElementById("volume-display");
+  const volumeUpBtn = document.getElementById("volume-up");
+  const volumeDownBtn = document.getElementById("volume-down");
+  const volumeCloseBtn = document.getElementById("volume-close");
+  const pulseRing = document.getElementById("pulse-ring");
+  const playingIndicator = document.getElementById("playing-indicator");
+
+  let isPlaying = false;
+  let volumeTimeout: number | null = null;
+  const INITIAL_VOLUME = 70;
+  const AUDIO_KEY = "baocap_audio_state";
+
+  // Wait for audio to be created by Layout.astro
+  function initAudioControls() {
+    const audio =
+      window.__baocapAudio__ ||
+      (document.getElementById("ambient-audio") as HTMLAudioElement);
+    if (!audio) {
+      return;
+    }
+
+    // Restore UI state from localStorage
+    const savedState = localStorage.getItem(AUDIO_KEY);
+    if (savedState) {
+      const state = JSON.parse(savedState);
+      const savedVolume = Math.round((state.volume || 0.7) * 100);
+
+      if (volumeSlider) {
+        volumeSlider.value = savedVolume.toString();
+        volumeSlider.style.setProperty("--volume-percent", `${savedVolume}%`);
+      }
+      if (volumeDisplay) {
+        volumeDisplay.textContent = savedVolume.toString();
+      }
+
+      // Check actual audio state (more reliable than saved state)
+      isPlaying = !audio.paused;
+
+      // Update UI based on ACTUAL audio state
+      if (isPlaying) {
+        volumeOff?.classList.add("hidden");
+        volumeOn?.classList.remove("hidden");
+        toggleBtn?.classList.add(
+          "from-amber-500",
+          "to-yellow-600",
+          "border-amber-400"
+        );
+        toggleBtn?.classList.remove(
+          "from-neutral-600",
+          "to-neutral-700",
+          "border-neutral-500"
+        );
+        pulseRing?.classList.remove("hidden");
+        playingIndicator?.classList.remove("hidden");
+      } else {
+        volumeOn?.classList.add("hidden");
+        volumeOff?.classList.remove("hidden");
+        toggleBtn?.classList.add(
+          "from-neutral-600",
+          "to-neutral-700",
+          "border-neutral-500"
+        );
+        toggleBtn?.classList.remove(
+          "from-amber-500",
+          "to-yellow-600",
+          "border-amber-400"
+        );
+      }
+    } else {
+      // Default initialization
+      if (audio) {
+        audio.volume = INITIAL_VOLUME / 100;
+      }
+      if (volumeSlider) {
+        volumeSlider.value = INITIAL_VOLUME.toString();
+        volumeSlider.style.setProperty(
+          "--volume-percent",
+          `${INITIAL_VOLUME}%`
+        );
+      }
+      if (volumeDisplay) {
+        volumeDisplay.textContent = INITIAL_VOLUME.toString();
+      }
+      isPlaying = false;
+    }
+
+    // Sync UI with audio state every 500ms
+    setInterval(() => {
+      const currentlyPlaying = !audio.paused;
+      if (currentlyPlaying !== isPlaying) {
+        isPlaying = currentlyPlaying;
+        if (isPlaying) {
+          volumeOff?.classList.add("hidden");
+          volumeOn?.classList.remove("hidden");
+          toggleBtn?.classList.add(
+            "from-amber-500",
+            "to-yellow-600",
+            "border-amber-400"
+          );
+          toggleBtn?.classList.remove(
+            "from-neutral-600",
+            "to-neutral-700",
+            "border-neutral-500"
+          );
+          pulseRing?.classList.remove("hidden");
+          playingIndicator?.classList.remove("hidden");
+        } else {
+          volumeOn?.classList.add("hidden");
+          volumeOff?.classList.remove("hidden");
+          toggleBtn?.classList.add(
+            "from-neutral-600",
+            "to-neutral-700",
+            "border-neutral-500"
+          );
+          toggleBtn?.classList.remove(
+            "from-amber-500",
+            "to-yellow-600",
+            "border-amber-400"
+          );
+          pulseRing?.classList.add("hidden");
+          playingIndicator?.classList.add("hidden");
+        }
+      }
+    }, 500);
+  }
+
+  // Initialize when DOM ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAudioControls);
+  } else {
+    initAudioControls();
+  }
+
+  // Function to show volume popup
+  function openVolumePopup() {
+    if (volumeControl) {
+      volumeControl.classList.remove("hidden");
+      volumeControl.focus();
+      if (volumeTimeout) clearTimeout(volumeTimeout);
+      // Optional: close after 4s inactivity unless hovered/focused
+      volumeTimeout = window.setTimeout(() => {
+        if (
+          !volumeControl.matches(":hover") &&
+          document.activeElement !== volumeControl
+        ) {
+          closeVolumePopup();
+        }
+      }, 4000);
+    }
+  }
+  function closeVolumePopup() {
+    if (volumeControl) {
+      volumeControl.classList.add("hidden");
+    }
+    if (volumeTimeout) clearTimeout(volumeTimeout);
+  }
+
+  // Toggle Play/Pause
+  toggleBtn?.addEventListener("click", () => {
+    const audio =
+      window.__baocapAudio__ ||
+      (document.getElementById("ambient-audio") as HTMLAudioElement);
+    if (!audio) return;
+
+    if (isPlaying) {
+      // Pause
+      audio.pause();
+      volumeOn?.classList.add("hidden");
+      volumeOff?.classList.remove("hidden");
+      toggleBtn.classList.remove(
+        "from-amber-500",
+        "to-yellow-600",
+        "border-amber-400"
+      );
+      toggleBtn.classList.add(
+        "from-neutral-600",
+        "to-neutral-700",
+        "border-neutral-500"
+      );
+      pulseRing?.classList.add("hidden");
+      playingIndicator?.classList.add("hidden");
+      isPlaying = false;
+      closeVolumePopup();
+
+      // Save state
+      saveState();
+    } else {
+      // Play
+      audio.play().catch((err) => console.log("Audio play error:", err));
+      volumeOff?.classList.add("hidden");
+      volumeOn?.classList.remove("hidden");
+      toggleBtn.classList.add(
+        "from-amber-500",
+        "to-yellow-600",
+        "border-amber-400"
+      );
+      toggleBtn.classList.remove(
+        "from-neutral-600",
+        "to-neutral-700",
+        "border-neutral-500"
+      );
+      pulseRing?.classList.remove("hidden");
+      playingIndicator?.classList.remove("hidden");
+      isPlaying = true;
+      openVolumePopup();
+
+      // Save state
+      saveState();
+    }
+  });
+
+  // Save state function
+  function saveState() {
+    const audio =
+      window.__baocapAudio__ ||
+      (document.getElementById("ambient-audio") as HTMLAudioElement);
+    if (audio) {
+      const state = {
+        isPlaying: !audio.paused,
+        volume: audio.volume,
+        currentTime: audio.currentTime,
+      };
+      localStorage.setItem(AUDIO_KEY, JSON.stringify(state));
+    }
+  }
+
+  // Click toggle again to focus popup if already playing
+  toggleBtn?.addEventListener("contextmenu", (e) => {
+    // right-click on button to quickly open volume (for accessibility)
+    e.preventDefault();
+    openVolumePopup();
+  });
+
+  // Also show popup if double click (bonus easy access)
+  toggleBtn?.addEventListener("dblclick", (e) => {
+    openVolumePopup();
+  });
+
+  // And open on long press/tap (mobile friendly)
+  let pressTimer: number | null = null;
+  toggleBtn?.addEventListener("mousedown", () => {
+    pressTimer = window.setTimeout(openVolumePopup, 400);
+  });
+  toggleBtn?.addEventListener("mouseup", () => {
+    if (pressTimer) clearTimeout(pressTimer);
+  });
+  toggleBtn?.addEventListener("mouseleave", () => {
+    if (pressTimer) clearTimeout(pressTimer);
+  });
+  toggleBtn?.addEventListener("touchstart", () => {
+    pressTimer = window.setTimeout(openVolumePopup, 400);
+  });
+  toggleBtn?.addEventListener("touchend", () => {
+    if (pressTimer) clearTimeout(pressTimer);
+  });
+
+  // Volume Popup close button
+  volumeCloseBtn?.addEventListener("click", () => {
+    closeVolumePopup();
+  });
+
+  // Hide popup if lost focus and not hovered
+  if (volumeControl) {
+    volumeControl.addEventListener("focusout", (e) => {
+      setTimeout(() => {
+        // Check if focus is inside volume control or on close button
+        if (!volumeControl.contains(document.activeElement)) {
+          closeVolumePopup();
+        }
+      }, 50);
+    });
+
+    // Also hide if clicked outside
+    document.addEventListener("mousedown", (e) => {
+      const target = e.target as Node;
+      if (
+        volumeControl &&
+        !volumeControl.classList.contains("hidden") &&
+        !volumeControl.contains(target) &&
+        !toggleBtn.contains(target)
+      ) {
+        closeVolumePopup();
+      }
+    });
+  }
+
+  // When popup is hovered/focused, block timeout close
+  if (volumeControl) {
+    volumeControl.addEventListener("mouseenter", () => {
+      if (volumeTimeout) clearTimeout(volumeTimeout);
+    });
+    volumeControl.addEventListener("mouseleave", () => {
+      volumeTimeout = window.setTimeout(() => {
+        if (!volumeControl.matches(":hover")) {
+          closeVolumePopup();
+        }
+      }, 2000);
+    });
+  }
+
+  // Volume Slider
+  volumeSlider?.addEventListener("input", (e) => {
+    const target = e.target as HTMLInputElement;
+    const volume = parseInt(target.value, 10) / 100;
+    const audio =
+      window.__baocapAudio__ ||
+      (document.getElementById("ambient-audio") as HTMLAudioElement);
+    if (audio) {
+      audio.volume = volume;
+    }
+    if (volumeDisplay) {
+      volumeDisplay.textContent = target.value;
+    }
+    // Update track gradient
+    target.style.setProperty("--volume-percent", `${target.value}%`);
+    // Save state
+    saveState();
+  });
+
+  // Volume Up Button
+  volumeUpBtn?.addEventListener("click", () => {
+    const currentVolume = parseInt(
+      volumeSlider?.value || `${INITIAL_VOLUME}`,
+      10
+    );
+    const newVolume = Math.min(100, currentVolume + 10);
+    if (volumeSlider) {
+      volumeSlider.value = newVolume.toString();
+      volumeSlider.dispatchEvent(new Event("input"));
+    }
+  });
+
+  // Volume Down Button
+  volumeDownBtn?.addEventListener("click", () => {
+    const currentVolume = parseInt(
+      volumeSlider?.value || `${INITIAL_VOLUME}`,
+      10
+    );
+    const newVolume = Math.max(0, currentVolume - 10);
+    if (volumeSlider) {
+      volumeSlider.value = newVolume.toString();
+      volumeSlider.dispatchEvent(new Event("input"));
+    }
+  });
+</script>

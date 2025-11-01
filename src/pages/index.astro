@@ -1,60 +1,18 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Hero from '../components/MuseumHero.astro';
-import Timeline from '../components/Timeline.astro';
-import ReasonsSection from '../components/ReasonsSection.astro';
-import Gallery from '../components/ArtifactGallery.astro';
-import Experience from '../components/InteractiveExperience.astro';
+import Layout from "../layouts/Layout.astro";
+import Navigation from "../components/Navigation.astro";
+import Hero from "../components/MuseumHero.astro";
+import Timeline from "../components/Timeline.astro";
+import ReasonsSection from "../components/ReasonsSection.astro";
+import Gallery from "../components/ArtifactGallery.astro";
+import Experience from "../components/InteractiveExperience.astro";
 ---
 
 <Layout title="Bảo Tàng Thời Bao Cấp - Trải nghiệm Lịch sử">
-	<div class="museum-container">
-		<Hero />
-		<Timeline />
-		<ReasonsSection />
-		<Gallery />
-		<Experience />
-	</div>
+  <Navigation />
+  <Hero />
+  <Timeline />
+  <ReasonsSection />
+  <Gallery />
+  <Experience />
 </Layout>
-
-<style is:global>
-	* {
-		margin: 0;
-		padding: 0;
-		box-sizing: border-box;
-	}
-
-	html {
-		scroll-behavior: smooth;
-	}
-
-	body {
-		font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
-		overflow-x: hidden;
-		background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
-		color: #fff;
-	}
-
-	.museum-container {
-		position: relative;
-		min-height: 100vh;
-	}
-
-	/* Custom scrollbar */
-	::-webkit-scrollbar {
-		width: 10px;
-	}
-
-	::-webkit-scrollbar-track {
-		background: #1a1a1a;
-	}
-
-	::-webkit-scrollbar-thumb {
-		background: #d4af37;
-		border-radius: 5px;
-	}
-
-	::-webkit-scrollbar-thumb:hover {
-		background: #f4bf37;
-	}
-</style>

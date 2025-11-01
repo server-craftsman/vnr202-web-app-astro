@@ -1,0 +1,158 @@
+---
+import { timelineData } from '../../data/timeline';
+import { slugify } from '../../utils/slugify';
+import Layout from '../../layouts/Layout.astro';
+import Icon from '../../components/Icons.astro';
+
+export async function getStaticPaths() {
+  return timelineData.map(event => ({
+    params: { event: `${event.year}-${slugify(event.title)}` },
+  }));
+}
+
+const { event } = Astro.params;
+const eventData = timelineData.find(e =>
+  `${e.year}-${slugify(e.title)}` === event
+);
+
+if (!eventData) {
+  return Astro.redirect('/404');
+}
+
+// Get prev/next events
+const currentIndex = timelineData.findIndex(e => `${e.year}-${slugify(e.title)}` === event);
+const prevEvent = currentIndex > 0 ? timelineData[currentIndex - 1] : null;
+const nextEvent = currentIndex < timelineData.length - 1 ? timelineData[currentIndex + 1] : null;
+---
+
+<Layout title={eventData.title + ' | Dòng Thời Gian'}>
+  <main class="min-h-screen bg-gradient-to-b from-stone-950 via-neutral-900 to-stone-900 py-16 px-6">
+    <div class="max-w-6xl mx-auto">
+      <!-- Back Button -->
+      <a href="/#timeline" class="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-semibold mb-12 transition-colors group">
+        <Icon name="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+        Trở về Dòng thời gian
+      </a>
+
+      <!-- Event Hero -->
+      {eventData.image && (
+        <div class="relative h-[500px] rounded-3xl overflow-hidden mb-12 shadow-2xl">
+          <img 
+            src={eventData.image} 
+            alt={eventData.title}
+            class="w-full h-full object-cover"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/80 to-transparent"></div>
+          
+          <!-- Overlay Info -->
+          <div class="absolute bottom-0 left-0 right-0 p-12">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full text-stone-950 font-bold text-2xl shadow-xl">
+                {eventData.year}
+              </div>
+              <div class="px-4 py-2 bg-amber-500/20 backdrop-blur-md border border-amber-500/40 rounded-full text-amber-300 font-semibold flex items-center gap-2">
+                <Icon name={eventData.category === 'economic' ? 'cube' : eventData.category === 'political' ? 'home' : 'book'} class="w-5 h-5" />
+                {eventData.category === 'economic' ? 'Kinh tế' : eventData.category === 'political' ? 'Chính trị' : eventData.category === 'social' ? 'Xã hội' : 'Văn hóa'}
+              </div>
+              {eventData.importance === 'high' && (
+                <div class="px-4 py-2 bg-gradient-to-r from-amber-500/30 to-yellow-500/30 backdrop-blur-md border border-amber-400/50 rounded-full text-amber-200 font-semibold flex items-center gap-2">
+                  <Icon name="star" class="w-5 h-5" />
+                  Quan trọng
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <!-- Main Content -->
+      <div class="bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/30 rounded-3xl p-12 shadow-2xl mb-12">
+        <!-- Title (if no image) -->
+        {!eventData.image && (
+          <div class="mb-8">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full text-stone-950 font-bold text-2xl">
+                {eventData.year}
+              </div>
+              <div class="px-4 py-2 bg-amber-500/20 border border-amber-500/40 rounded-full text-amber-300 font-semibold">
+                {eventData.category}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <h1 class="font-['Playfair_Display'] text-4xl md:text-5xl font-bold mb-8 text-white">
+          {eventData.title}
+        </h1>
+
+        <!-- Description -->
+        <div class="prose prose-invert prose-lg max-w-none mb-8">
+          <p class="text-xl text-neutral-200 leading-relaxed">
+            {eventData.description}
+          </p>
+        </div>
+
+        <!-- Keywords -->
+        <div class="flex flex-wrap gap-3">
+          {eventData.keywords.map(keyword => (
+            <span class="px-4 py-2 bg-amber-500/15 border border-amber-500/30 rounded-full text-amber-300 font-medium">
+              {keyword}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <!-- Historical Context & Impact -->
+      <div class="grid md:grid-cols-2 gap-8 mb-12">
+        <!-- Context -->
+        <div class="bg-gradient-to-br from-blue-900/10 to-indigo-900/5 border border-blue-500/20 rounded-2xl p-8">
+          <div class="flex items-center gap-3 mb-4">
+            <Icon name="information" class="w-6 h-6 text-blue-400" />
+            <h2 class="font-['Playfair_Display'] text-2xl font-bold text-blue-300">
+              Bối cảnh
+            </h2>
+          </div>
+          <p class="text-neutral-200 leading-relaxed">
+            Sự kiện này diễn ra trong bối cảnh Việt Nam vừa kết thúc chiến tranh, đất nước đang trong giai đoạn tái thiết và xây dựng. Quyết định này ảnh hưởng sâu sắc đến đời sống kinh tế - xã hội của người dân.
+          </p>
+        </div>
+
+        <!-- Impact -->
+        <div class="bg-gradient-to-br from-orange-900/10 to-red-900/5 border border-orange-500/20 rounded-2xl p-8">
+          <div class="flex items-center gap-3 mb-4">
+            <Icon name="sparkles" class="w-6 h-6 text-orange-400" />
+            <h2 class="font-['Playfair_Display'] text-2xl font-bold text-orange-300">
+              Tác động
+            </h2>
+          </div>
+          <p class="text-neutral-200 leading-relaxed">
+            Sự kiện này đánh dấu một bước ngoặt quan trọng trong lịch sử Việt Nam, ảnh hưởng trực tiếp đến cuộc sống của hàng triệu người dân và định hình nền kinh tế đất nước trong nhiều năm sau đó.
+          </p>
+        </div>
+      </div>
+
+      <!-- Navigation Prev/Next -->
+      <div class="flex items-center justify-between border-t border-amber-500/20 pt-8">
+        {prevEvent ? (
+          <a href={`/timeline/${prevEvent.year}-${slugify(prevEvent.title)}`} class="group flex items-center gap-3 px-6 py-4 bg-stone-800/40 border border-amber-500/20 rounded-2xl hover:border-amber-500/50 transition-all">
+            <Icon name="arrow-left" class="w-5 h-5 text-amber-400 group-hover:-translate-x-1 transition-transform" />
+            <div class="text-left">
+              <div class="text-xs text-neutral-500 uppercase mb-1">Trước đó</div>
+              <div class="text-amber-300 font-semibold">{prevEvent.title}</div>
+            </div>
+          </a>
+        ) : <div></div>}
+
+        {nextEvent ? (
+          <a href={`/timeline/${nextEvent.year}-${slugify(nextEvent.title)}`} class="group flex items-center gap-3 px-6 py-4 bg-stone-800/40 border border-amber-500/20 rounded-2xl hover:border-amber-500/50 transition-all">
+            <div class="text-right">
+              <div class="text-xs text-neutral-500 uppercase mb-1">Tiếp theo</div>
+              <div class="text-amber-300 font-semibold">{nextEvent.title}</div>
+            </div>
+            <Icon name="arrow-right" class="w-5 h-5 text-amber-400 group-hover:translate-x-1 transition-transform" />
+          </a>
+        ) : <div></div>}
+      </div>
+    </div>
+  </main>
+</Layout>

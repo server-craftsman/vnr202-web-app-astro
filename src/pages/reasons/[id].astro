@@ -1,0 +1,173 @@
+---
+import { baoCapReasons } from "../../data/reasons";
+import Layout from "../../layouts/Layout.astro";
+import Icon from "../../components/Icons.astro";
+
+export async function getStaticPaths() {
+  return baoCapReasons.map((r) => ({ params: { id: r.id } }));
+}
+
+const { id } = Astro.params;
+const reason = baoCapReasons.find((r) => r.id === id);
+
+if (!reason) {
+  return Astro.redirect("/404");
+}
+
+// Related reasons
+const relatedReasons = baoCapReasons
+  .filter((r) => r.id !== reason.id)
+  .slice(0, 3);
+---
+
+<Layout title={reason.title + " | Lý do Bao Cấp"}>
+  <main
+    class="min-h-screen bg-gradient-to-b from-stone-950 via-neutral-900 to-stone-900 py-16 px-6"
+  >
+    <div class="max-w-5xl mx-auto">
+      <!-- Back Button -->
+      <a
+        href="/#reasons"
+        class="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-semibold mb-12 transition-colors group"
+      >
+        <Icon
+          name="arrow-left"
+          class="w-5 h-5 group-hover:-translate-x-1 transition-transform"
+        />
+        Quay lại Lý do tổng quát
+      </a>
+
+      <!-- Hero Card -->
+      <div
+        class="bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/30 rounded-3xl p-12 md:p-16 shadow-2xl text-center mb-12"
+      >
+        <!-- Icon -->
+        <div
+          class="text-9xl mb-8 inline-block hover:scale-110 hover:rotate-6 transition-transform duration-500"
+        >
+          {reason.icon}
+        </div>
+
+        <!-- Priority Badge -->
+        <div
+          class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 border border-amber-500/40 rounded-full text-amber-300 font-semibold text-sm mb-6"
+        >
+          <Icon name="star" class="w-4 h-4" />
+          Ưu tiên #{reason.priority}
+        </div>
+
+        <!-- Title -->
+        <h1
+          class="font-['Playfair_Display'] text-4xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent"
+        >
+          {reason.title}
+        </h1>
+
+        <!-- Description -->
+        <p class="text-2xl text-neutral-200 leading-relaxed max-w-3xl mx-auto">
+          {reason.description}
+        </p>
+      </div>
+
+      <!-- Detailed Analysis -->
+      <div
+        class="bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/30 rounded-3xl p-12 shadow-2xl mb-12"
+      >
+        <div class="flex items-center gap-3 mb-8">
+          <Icon name="document" class="w-8 h-8 text-amber-400" />
+          <h2
+            class="font-['Playfair_Display'] text-3xl font-bold text-amber-300"
+          >
+            Phân tích chi tiết
+          </h2>
+        </div>
+
+        <div class="space-y-6">
+          {
+            reason.details.map((detail, index) => (
+              <div class="flex items-start gap-4 p-6 bg-stone-900/50 border border-amber-500/10 rounded-2xl hover:border-amber-500/30 transition-colors group">
+                <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-xl flex items-center justify-center text-stone-950 font-bold shadow-xl group-hover:scale-110 transition-transform">
+                  {index + 1}
+                </div>
+                <p class="text-neutral-200 text-lg leading-relaxed flex-1">
+                  {detail}
+                </p>
+                <Icon
+                  name="check"
+                  class="w-6 h-6 text-amber-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                />
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      <!-- Historical Perspective -->
+      <div
+        class="bg-gradient-to-br from-purple-900/10 to-indigo-900/5 border border-purple-500/20 rounded-3xl p-12 shadow-2xl mb-12"
+      >
+        <div class="flex items-center gap-3 mb-6">
+          <Icon name="book" class="w-8 h-8 text-purple-400" />
+          <h2
+            class="font-['Playfair_Display'] text-3xl font-bold text-purple-300"
+          >
+            Góc nhìn lịch sử
+          </h2>
+        </div>
+        <p class="text-neutral-200 text-lg leading-relaxed mb-6">
+          Quyết định áp dụng mô hình kinh tế bao cấp không đơn thuần là một lựa
+          chọn kinh tế, mà còn phản ánh bối cảnh chính trị, xã hội và quan hệ
+          quốc tế phức tạp của Việt Nam sau 1975.
+        </p>
+        <div class="grid sm:grid-cols-3 gap-4 mt-8">
+          <div
+            class="bg-stone-900/50 border border-purple-500/10 rounded-xl p-6 text-center"
+          >
+            <div class="text-4xl font-bold text-purple-300 mb-2">1975</div>
+            <div class="text-neutral-400 text-sm">Giai đoạn bắt đầu</div>
+          </div>
+          <div
+            class="bg-stone-900/50 border border-purple-500/10 rounded-xl p-6 text-center"
+          >
+            <div class="text-4xl font-bold text-purple-300 mb-2">11 năm</div>
+            <div class="text-neutral-400 text-sm">Thời kỳ bao cấp</div>
+          </div>
+          <div
+            class="bg-stone-900/50 border border-purple-500/10 rounded-xl p-6 text-center"
+          >
+            <div class="text-4xl font-bold text-purple-300 mb-2">1986</div>
+            <div class="text-neutral-400 text-sm">Đổi Mới</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Reasons -->
+      {
+        relatedReasons.length > 0 && (
+          <div>
+            <h2 class="font-['Playfair_Display'] text-3xl md:text-4xl font-bold mb-8 text-center bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent">
+              Lý do liên quan
+            </h2>
+            <div class="grid sm:grid-cols-3 gap-6">
+              {relatedReasons.map((related) => (
+                <a href={`/reasons/${related.id}`} class="group block">
+                  <div class="bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-8 text-center hover:border-amber-500/50 hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500">
+                    <div class="text-6xl mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                      {related.icon}
+                    </div>
+                    <h3 class="text-lg font-bold text-white group-hover:text-amber-300 transition-colors mb-2">
+                      {related.title}
+                    </h3>
+                    <p class="text-neutral-400 text-sm line-clamp-2">
+                      {related.description}
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )
+      }
+    </div>
+  </main>
+</Layout>

@@ -1,0 +1,108 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Icon from '../../components/Icons.astro';
+
+const comparisons = [
+  {
+    aspect: 'Mua sắm',
+    baocap: 'Xếp hàng từ sáng, cần tem phiếu, hạn mức cố định',
+    modern: 'Siêu thị, online shopping, tự do mua bán',
+    icon: '🛒'
+  },
+  {
+    aspect: 'Giá cả',
+    baocap: 'Nhà nước quy định, không thay đổi',
+    modern: 'Theo cung cầu thị trường, linh hoạt',
+    icon: '💰'
+  },
+  {
+    aspect: 'Hàng hóa',
+    baocap: 'Hạn chế, thiếu thốn, chất lượng kém',
+    modern: 'Đa dạng, phong phú, nhiều lựa chọn',
+    icon: '📦'
+  },
+  {
+    aspect: 'Công nghệ',
+    baocap: 'Tivi đen trắng, radio, xe đạp',
+    modern: 'Smartphone, Internet, ô tô điện',
+    icon: '📱'
+  },
+];
+---
+
+<Layout title="So sánh Bao Cấp vs Hiện đại">
+  <main class="min-h-screen bg-gradient-to-b from-stone-950 via-neutral-900 to-stone-900 py-16 px-6">
+    <div class="max-w-6xl mx-auto">
+      <!-- Back -->
+      <a href="/#experience" class="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-semibold mb-12 transition-colors group">
+        <Icon name="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+        Trở về Trải nghiệm
+      </a>
+
+      <!-- Header -->
+      <div class="text-center mb-16">
+        <div class="text-7xl mb-6">⚖️</div>
+        <h1 class="font-['Playfair_Display'] text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent">
+          So sánh: Thời Bao Cấp vs Hiện đại
+        </h1>
+        <p class="text-xl text-neutral-300 max-w-3xl mx-auto">
+          Khám phá sự khác biệt giữa hai thời kỳ
+        </p>
+      </div>
+
+      <!-- Comparisons -->
+      <div class="space-y-8">
+        {comparisons.map((comp, index) => (
+          <div class="bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/30 rounded-3xl overflow-hidden shadow-2xl">
+            <!-- Aspect Title -->
+            <div class="bg-amber-500/10 border-b border-amber-500/20 p-6">
+              <div class="flex items-center gap-4">
+                <span class="text-5xl">{comp.icon}</span>
+                <h2 class="font-['Playfair_Display'] text-3xl font-bold text-amber-300">
+                  {comp.aspect}
+                </h2>
+              </div>
+            </div>
+
+            <!-- Comparison Grid -->
+            <div class="grid md:grid-cols-2 divide-x divide-amber-500/20">
+              <!-- Bao Cap -->
+              <div class="p-8 hover:bg-stone-800/30 transition-colors">
+                <div class="flex items-center gap-2 mb-4">
+                  <Icon name="calendar" class="w-5 h-5 text-amber-400" />
+                  <h3 class="text-xl font-bold text-amber-400">Thời Bao Cấp</h3>
+                </div>
+                <p class="text-neutral-200 leading-relaxed text-lg">
+                  {comp.baocap}
+                </p>
+              </div>
+
+              <!-- Modern -->
+              <div class="p-8 hover:bg-stone-800/30 transition-colors">
+                <div class="flex items-center gap-2 mb-4">
+                  <Icon name="sparkles" class="w-5 h-5 text-green-400" />
+                  <h3 class="text-xl font-bold text-green-400">Hiện đại</h3>
+                </div>
+                <p class="text-neutral-200 leading-relaxed text-lg">
+                  {comp.modern}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- CTA -->
+      <div class="mt-16 text-center bg-gradient-to-br from-amber-900/20 to-yellow-900/10 backdrop-blur-xl border border-amber-500/20 rounded-3xl p-12">
+        <h3 class="font-['Playfair_Display'] text-3xl font-bold mb-4 text-amber-300">
+          Bài học lịch sử
+        </h3>
+        <p class="text-xl text-neutral-200 leading-relaxed max-w-3xl mx-auto">
+          Sự khác biệt này cho thấy bước tiến vượt bậc của Việt Nam sau Đổi Mới 1986, 
+          chứng minh tầm quan trọng của việc lựa chọn mô hình kinh tế phù hợp.
+        </p>
+      </div>
+    </div>
+  </main>
+</Layout>
+

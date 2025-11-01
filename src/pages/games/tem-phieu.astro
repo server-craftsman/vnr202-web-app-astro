@@ -1,0 +1,717 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Icon from "../../components/Icons.astro";
+---
+
+<Layout title="Mini-game Tem Phiếu | Trải nghiệm Bao Cấp">
+  <main
+    class="min-h-screen bg-gradient-to-b from-stone-950 via-neutral-900 to-stone-900 py-16 px-6 relative overflow-hidden"
+  >
+    <!-- Particle Canvas for Effects -->
+    <canvas
+      id="particle-canvas"
+      class="absolute inset-0 pointer-events-none z-40"></canvas>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+      <!-- Back Button -->
+      <a
+        href="/#experience"
+        class="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-semibold mb-12 transition-colors group"
+      >
+        <Icon
+          name="arrow-left"
+          class="w-5 h-5 group-hover:-translate-x-1 transition-transform"
+        />
+        Trở về Trải nghiệm
+      </a>
+
+      <!-- Game Header -->
+      <div class="text-center mb-12">
+        <div class="text-7xl mb-6 inline-block animate-bounce">🏪</div>
+        <h1
+          class="font-['Playfair_Display'] text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent"
+        >
+          Minigame: Đổi Tem Phiếu
+        </h1>
+        <p class="text-xl text-neutral-300 max-w-3xl mx-auto mb-8">
+          Trải nghiệm cuộc sống thời bao cấp: Kéo tem phiếu đúng vào mặt hàng
+          tương ứng để mua được hàng!
+        </p>
+
+        <!-- Score & Level Display -->
+        <div class="flex items-center justify-center gap-4 mb-8 flex-wrap">
+          <div
+            class="px-6 py-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-2xl shadow-xl"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="star" class="w-5 h-5 text-green-400" />
+              <span class="text-green-300 font-bold text-lg"
+                >Điểm: <span id="score" class="text-2xl">0</span></span
+              >
+            </div>
+          </div>
+          <div
+            class="px-6 py-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 rounded-2xl shadow-xl"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="sparkles" class="w-5 h-5 text-purple-400" />
+              <span class="text-purple-300 font-bold text-lg"
+                >Combo: <span id="combo" class="text-2xl">×1</span></span
+              >
+            </div>
+          </div>
+          <div
+            class="px-6 py-3 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/40 rounded-2xl shadow-xl"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="chart-bar" class="w-5 h-5 text-blue-400" />
+              <span class="text-blue-300 font-bold text-lg"
+                >Cấp: <span id="level" class="text-2xl">1</span></span
+              >
+            </div>
+          </div>
+          <div
+            class="px-6 py-3 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 rounded-2xl shadow-xl"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="clock" class="w-5 h-5 text-amber-400" />
+              <span class="text-amber-300 font-bold text-lg"
+                >Thời gian: <span id="timer" class="text-2xl">60</span>s</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Container -->
+      <div
+        class="bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/30 rounded-3xl p-12 shadow-2xl"
+        id="game-container"
+      >
+        <!-- Instructions (Show before game starts) -->
+        <div id="instructions" class="text-center">
+          <div
+            class="max-w-2xl mx-auto bg-amber-900/20 border border-amber-500/30 rounded-2xl p-8 mb-8"
+          >
+            <div class="flex items-center justify-center gap-3 mb-6">
+              <Icon name="information" class="w-8 h-8 text-amber-400" />
+              <h3 class="text-3xl font-bold text-amber-300">Hướng dẫn chơi</h3>
+            </div>
+            <ul class="text-left space-y-4 text-neutral-200 mb-6">
+              <li class="flex items-start gap-3 text-lg">
+                <Icon
+                  name="check"
+                  class="w-6 h-6 text-amber-400 mt-1 flex-shrink-0"
+                />
+                <span>Kéo tem phiếu thả vào mặt hàng tương ứng</span>
+              </li>
+              <li class="flex items-start gap-3 text-lg">
+                <Icon
+                  name="check"
+                  class="w-6 h-6 text-amber-400 mt-1 flex-shrink-0"
+                />
+                <span>Đúng: +10 điểm × combo. Sai: mất combo, -5 điểm</span>
+              </li>
+              <li class="flex items-start gap-3 text-lg">
+                <Icon
+                  name="check"
+                  class="w-6 h-6 text-amber-400 mt-1 flex-shrink-0"
+                />
+                <span>Combo tăng khi trả lời đúng liên tiếp (max ×5)</span>
+              </li>
+              <li class="flex items-start gap-3 text-lg">
+                <Icon
+                  name="check"
+                  class="w-6 h-6 text-amber-400 mt-1 flex-shrink-0"
+                />
+                <span>3 cấp độ - mỗi cấp khó và nhiều món hơn!</span>
+              </li>
+            </ul>
+            <div
+              class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-4"
+            >
+              <div
+                class="flex items-center gap-2 text-purple-300 justify-center"
+              >
+                <Icon name="sparkles" class="w-5 h-5" />
+                <span class="font-bold"
+                  >Mục tiêu: Đạt 150 điểm để chiến thắng!</span
+                >
+              </div>
+            </div>
+          </div>
+          <button
+            id="start-game"
+            class="px-12 py-5 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full text-stone-950 font-bold text-xl shadow-2xl shadow-amber-500/40 hover:shadow-amber-500/60 hover:scale-110 transition-all duration-300 flex items-center gap-3 mx-auto group"
+          >
+            <Icon
+              name="play"
+              class="w-7 h-7 group-hover:scale-125 transition-transform"
+            />
+            Bắt đầu chơi
+          </button>
+        </div>
+
+        <!-- Game Board (Hidden until start) -->
+        <div id="game-board" class="hidden">
+          <!-- Tem Phieu Section -->
+          <div class="mb-12">
+            <h3
+              class="text-2xl font-bold text-amber-300 mb-6 flex items-center gap-3"
+            >
+              <Icon name="document" class="w-6 h-6" />
+              Tem Phiếu của bạn
+            </h3>
+            <div class="flex flex-wrap justify-center gap-4" id="tem-container">
+              <!-- Generated by JS -->
+            </div>
+          </div>
+
+          <!-- Goods Section -->
+          <div>
+            <h3
+              class="text-2xl font-bold text-amber-300 mb-6 flex items-center gap-3"
+            >
+              <Icon name="cube" class="w-6 h-6" />
+              Mặt hàng cần mua
+            </h3>
+            <div
+              class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"
+              id="goods-container"
+            >
+              <!-- Generated by JS -->
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="mt-8">
+            <div class="flex items-center justify-between mb-2">
+              <span
+                class="text-neutral-400 text-sm font-semibold"
+                id="progress-label">Tiến độ cấp 1</span
+              >
+              <span class="text-amber-300 text-sm font-bold"
+                ><span id="completed">0</span>/<span id="total">0</span></span
+              >
+            </div>
+            <div
+              class="h-4 bg-stone-900 rounded-full overflow-hidden border border-amber-500/20 shadow-inner"
+            >
+              <div
+                id="progress-bar"
+                class="h-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 bg-[length:200%_100%] animate-shimmer transition-all duration-300 shadow-lg"
+                style="width: 0%"
+              >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over" class="hidden text-center">
+          <div class="text-8xl mb-6 animate-bounce">🎉</div>
+          <h2
+            class="font-['Playfair_Display'] text-5xl font-bold mb-6 bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent"
+          >
+            Hoàn thành!
+          </h2>
+          <div class="text-3xl text-neutral-200 mb-4">
+            Điểm của bạn: <span
+              id="final-score"
+              class="text-6xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent"
+              >0</span
+            >
+          </div>
+          <div
+            id="achievements"
+            class="flex flex-wrap justify-center gap-3 mb-8"
+          >
+            <!-- Achievements will be added by JS -->
+          </div>
+          <button
+            id="play-again"
+            class="px-12 py-5 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full text-stone-950 font-bold text-xl shadow-2xl shadow-amber-500/40 hover:shadow-amber-500/60 hover:scale-110 transition-all duration-300 flex items-center gap-3 mx-auto"
+          >
+            <Icon name="arrow-left" class="w-6 h-6" />
+            Chơi lại
+          </button>
+        </div>
+      </div>
+
+      <!-- Historical Info -->
+      <div
+        class="mt-12 bg-gradient-to-br from-amber-900/20 to-yellow-900/10 backdrop-blur-xl border border-amber-500/20 rounded-3xl p-10 md:p-12"
+      >
+        <div class="flex items-center gap-3 mb-6">
+          <Icon name="information" class="w-8 h-8 text-amber-400" />
+          <h3
+            class="font-['Playfair_Display'] text-2xl font-bold text-amber-300"
+          >
+            Về hệ thống tem phiếu
+          </h3>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8 text-neutral-200 leading-relaxed">
+          <div>
+            <h4 class="font-bold text-amber-300 mb-3">Cách hoạt động</h4>
+            <p>
+              Mỗi gia đình được cấp sổ tem phiếu hàng tháng với các hạn mức:
+              gạo, thịt, đường, vải... Không có tem phiếu, bạn không thể mua
+              hàng dù có tiền.
+            </p>
+          </div>
+          <div>
+            <h4 class="font-bold text-amber-300 mb-3">Thực tế cuộc sống</h4>
+            <p>
+              Người dân phải xếp hàng từ sáng sớm, giữ tem phiếu cẩn thận. Mất
+              tem phiếu đồng nghĩa với việc không có lương thực cho cả tháng.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+  }
+</style>
+
+<script>
+  // Game State
+  let score = 0;
+  let level = 1;
+  let timeLeft = 60;
+  let completed = 0;
+  let total = 0;
+  let combo = 1;
+  let maxCombo = 1;
+  let timerInterval: number | null = null;
+  let correctStreak = 0;
+
+  // Particle system for effects
+  const canvas = document.getElementById(
+    "particle-canvas"
+  ) as HTMLCanvasElement;
+  const ctx = canvas?.getContext("2d");
+
+  function resizeCanvas() {
+    if (canvas) {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+  }
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+
+  // Particle class
+  class Particle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    color: string;
+    size: number;
+
+    constructor(x: number, y: number, color: string) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 8;
+      this.vy = (Math.random() - 0.5) * 8 - 2;
+      this.life = 1;
+      this.color = color;
+      this.size = Math.random() * 6 + 4;
+    }
+
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vy += 0.2; // gravity
+      this.life -= 0.02;
+    }
+
+    draw() {
+      if (!ctx) return;
+      ctx.save();
+      ctx.globalAlpha = this.life;
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  let particles: Particle[] = [];
+
+  function animateParticles() {
+    if (!ctx || !canvas) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    particles = particles.filter((p) => p.life > 0);
+    particles.forEach((p) => {
+      p.update();
+      p.draw();
+    });
+
+    requestAnimationFrame(animateParticles);
+  }
+  animateParticles();
+
+  function createExplosion(x: number, y: number, isCorrect: boolean) {
+    const color = isCorrect ? "#10b981" : "#ef4444";
+    for (let i = 0; i < 30; i++) {
+      particles.push(new Particle(x, y, color));
+    }
+  }
+
+  // Game Data
+  const gameData = [
+    { tem: "Tem Phiếu Gạo", goods: "Gạo", emoji: "🍚" },
+    { tem: "Tem Phiếu Đường", goods: "Đường", emoji: "🍬" },
+    { tem: "Tem Phiếu Thịt", goods: "Thịt", emoji: "🥩" },
+    { tem: "Tem Phiếu Vải", goods: "Vải", emoji: "👕" },
+    { tem: "Tem Phiếu Dầu", goods: "Dầu ăn", emoji: "🫗" },
+    { tem: "Tem Phiếu Xà phòng", goods: "Xà phòng", emoji: "🧼" },
+    { tem: "Tem Phiếu Mì", goods: "Mì", emoji: "🍜" },
+    { tem: "Tem Phiếu Bánh", goods: "Bánh", emoji: "🥖" },
+  ];
+
+  function getCurrentLevelData() {
+    const itemsPerLevel = 3 + level - 1;
+    return gameData.slice(
+      0,
+      Math.min(itemsPerLevel + level - 1, gameData.length)
+    );
+  }
+
+  function updateUI() {
+    document.getElementById("score")!.textContent = score.toString();
+    document.getElementById("level")!.textContent = level.toString();
+    document.getElementById("timer")!.textContent = timeLeft.toString();
+    document.getElementById("combo")!.textContent = `×${combo}`;
+    document.getElementById("completed")!.textContent = completed.toString();
+    document.getElementById("total")!.textContent = total.toString();
+
+    // Update progress label
+    const progressLabel = document.getElementById("progress-label");
+    if (progressLabel) {
+      progressLabel.textContent = `Tiến độ cấp ${level}`;
+    }
+
+    const progress = total > 0 ? (completed / total) * 100 : 0;
+    const progressBar = document.getElementById("progress-bar") as HTMLElement;
+    if (progressBar) progressBar.style.width = `${progress}%`;
+
+    // Combo visual feedback
+    const comboEl = document.getElementById("combo");
+    if (combo > 2) {
+      comboEl?.parentElement?.parentElement?.classList.add(
+        "animate-pulse",
+        "scale-110"
+      );
+    } else {
+      comboEl?.parentElement?.parentElement?.classList.remove(
+        "animate-pulse",
+        "scale-110"
+      );
+    }
+  }
+
+  function initGame() {
+    const levelData = getCurrentLevelData();
+    total = levelData.length;
+    completed = 0;
+
+    const temContainer = document.getElementById("tem-container")!;
+    temContainer.innerHTML = "";
+    const shuffledTems = [...levelData].sort(() => Math.random() - 0.5);
+
+    shuffledTems.forEach((item) => {
+      const temCard = document.createElement("div");
+      temCard.className =
+        "tem-card px-8 py-5 bg-gradient-to-br from-amber-100 to-yellow-100 text-amber-900 font-bold rounded-2xl shadow-2xl cursor-grab active:cursor-grabbing hover:scale-110 hover:rotate-3 transition-all border-4 border-amber-300 hover:border-amber-500 hover:shadow-amber-500/50";
+      temCard.innerHTML = `<div class="text-3xl mb-2">📄</div><div class="text-sm">${item.tem}</div>`;
+      temCard.draggable = true;
+      temCard.dataset.tem = item.tem;
+
+      temCard.addEventListener("dragstart", (e) => {
+        e.dataTransfer!.setData("tem", item.tem);
+        temCard.classList.add("opacity-40", "scale-75");
+      });
+
+      temCard.addEventListener("dragend", () => {
+        temCard.classList.remove("opacity-40", "scale-75");
+      });
+
+      temContainer.appendChild(temCard);
+    });
+
+    const goodsContainer = document.getElementById("goods-container")!;
+    goodsContainer.innerHTML = "";
+    const shuffledGoods = [...levelData].sort(() => Math.random() - 0.5);
+
+    shuffledGoods.forEach((item) => {
+      const goodsZone = document.createElement("div");
+      goodsZone.className =
+        "goods-zone min-h-40 bg-gradient-to-br from-stone-800/60 to-stone-900/60 border-3 border-dashed border-amber-500/40 rounded-2xl p-6 text-center transition-all duration-300 hover:bg-amber-500/15 hover:border-amber-500/80 hover:scale-105 cursor-pointer";
+      goodsZone.innerHTML = `
+        <div class="text-6xl mb-3 transition-transform group-hover:scale-125">${item.emoji}</div>
+        <div class="text-amber-300 font-bold text-lg mb-2">${item.goods}</div>
+        <div class="status text-sm text-neutral-500">Chờ tem phiếu...</div>
+      `;
+      goodsZone.dataset.goods = item.goods;
+      goodsZone.dataset.tem = item.tem;
+
+      goodsZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        goodsZone.classList.add(
+          "border-amber-400",
+          "bg-amber-500/30",
+          "scale-110",
+          "shadow-2xl",
+          "shadow-amber-500/50"
+        );
+      });
+
+      goodsZone.addEventListener("dragleave", () => {
+        goodsZone.classList.remove(
+          "border-amber-400",
+          "bg-amber-500/30",
+          "scale-110",
+          "shadow-2xl",
+          "shadow-amber-500/50"
+        );
+      });
+
+      goodsZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const temName = e.dataTransfer!.getData("tem");
+        const correctTem = goodsZone.dataset.tem;
+
+        goodsZone.classList.remove(
+          "border-amber-400",
+          "bg-amber-500/30",
+          "scale-110",
+          "shadow-2xl",
+          "shadow-amber-500/50"
+        );
+
+        const rect = goodsZone.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+
+        if (temName === correctTem) {
+          // Correct!
+          correctStreak++;
+          combo = Math.min(5, Math.floor(correctStreak / 2) + 1);
+          maxCombo = Math.max(maxCombo, combo);
+
+          const points = 10 * combo;
+          score += points;
+          completed++;
+
+          goodsZone.classList.add(
+            "bg-green-500/30",
+            "border-green-500",
+            "pointer-events-none",
+            "scale-110"
+          );
+          goodsZone.querySelector(".status")!.innerHTML =
+            `<span class="text-green-400 font-bold text-lg">✅ +${points}đ!</span>`;
+
+          // Remove used tem card with animation
+          const temCard = document.querySelector(`[data-tem="${temName}"]`);
+          if (temCard) {
+            temCard.classList.add("opacity-0", "scale-0", "rotate-180");
+            setTimeout(() => temCard.remove(), 400);
+          }
+
+          createExplosion(x, y, true);
+          playSound("correct");
+
+          if (combo > 2) {
+            showComboMessage(combo);
+          }
+
+          checkLevelComplete();
+        } else {
+          // Wrong!
+          correctStreak = 0;
+          combo = 1;
+          score = Math.max(0, score - 5);
+
+          goodsZone.classList.add(
+            "bg-red-500/30",
+            "border-red-500",
+            "animate-shake"
+          );
+          goodsZone.querySelector(".status")!.innerHTML =
+            '<span class="text-red-400 font-bold">❌ Sai! -5đ</span>';
+
+          setTimeout(() => {
+            goodsZone.classList.remove(
+              "bg-red-500/30",
+              "border-red-500",
+              "animate-shake"
+            );
+            goodsZone.querySelector(".status")!.innerHTML =
+              '<span class="text-neutral-500">Thử lại...</span>';
+          }, 1500);
+
+          createExplosion(x, y, false);
+          playSound("wrong");
+        }
+
+        updateUI();
+      });
+
+      goodsContainer.appendChild(goodsZone);
+    });
+
+    updateUI();
+  }
+
+  function showComboMessage(comboNum: number) {
+    const msg = document.createElement("div");
+    msg.className =
+      "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-12 py-6 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold text-4xl rounded-3xl shadow-2xl z-50 animate-bounce";
+    msg.textContent = `🔥 COMBO ×${comboNum}!`;
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 1500);
+  }
+
+  function checkLevelComplete() {
+    if (completed >= total) {
+      if (level < 3) {
+        setTimeout(() => {
+          level++;
+          timeLeft += 30;
+          completed = 0;
+          correctStreak = 0;
+          combo = 1;
+          initGame();
+          showLevelUpMessage();
+        }, 1200);
+      } else {
+        endGame(true);
+      }
+    }
+  }
+
+  function showLevelUpMessage() {
+    const msg = document.createElement("div");
+    msg.className =
+      "fixed top-1/3 left-1/2 -translate-x-1/2 px-16 py-8 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-bold text-5xl rounded-3xl shadow-2xl z-50 border-4 border-white/30 animate-pulse";
+    msg.innerHTML = `🎊<br>LÊN CẤP ${level}!<br><span class="text-2xl">+30 giây!</span>`;
+    msg.style.textAlign = "center";
+    document.body.appendChild(msg);
+    playSound("levelup");
+    setTimeout(() => msg.remove(), 2000);
+  }
+
+  function startTimer() {
+    timerInterval = window.setInterval(() => {
+      timeLeft--;
+      updateUI();
+
+      if (timeLeft <= 0) {
+        endGame(false);
+      } else if (timeLeft <= 10) {
+        document
+          .getElementById("timer")!
+          .classList.add("text-red-400", "animate-pulse");
+        if (timeLeft % 2 === 0) playSound("tick");
+      }
+    }, 1000);
+  }
+
+  function endGame(won: boolean) {
+    if (timerInterval) clearInterval(timerInterval);
+
+    document.getElementById("game-board")!.classList.add("hidden");
+    document.getElementById("game-over")!.classList.remove("hidden");
+    document.getElementById("final-score")!.textContent = score.toString();
+
+    // Add achievements
+    const achievements = document.getElementById("achievements")!;
+    const badges = [];
+
+    if (won)
+      badges.push({
+        icon: "🏆",
+        text: "Chiến thắng!",
+        color: "from-yellow-400 to-amber-500",
+      });
+    if (maxCombo >= 5)
+      badges.push({
+        icon: "🔥",
+        text: "Combo Master",
+        color: "from-red-400 to-orange-500",
+      });
+    if (score >= 200)
+      badges.push({
+        icon: "💎",
+        text: "Điểm cao!",
+        color: "from-blue-400 to-cyan-500",
+      });
+    if (level >= 3)
+      badges.push({
+        icon: "⭐",
+        text: "Full cấp",
+        color: "from-purple-400 to-pink-500",
+      });
+
+    achievements.innerHTML = badges
+      .map(
+        (b) => `
+      <div class="px-6 py-3 bg-gradient-to-r ${b.color} rounded-full text-white font-bold shadow-xl flex items-center gap-2">
+        <span class="text-2xl">${b.icon}</span>
+        <span>${b.text}</span>
+      </div>
+    `
+      )
+      .join("");
+
+    playSound(won ? "victory" : "gameover");
+  }
+
+  function playSound(type: string) {
+    console.log(`🔊 Sound: ${type}`);
+    // Can add Web Audio API here
+  }
+
+  // Event Listeners
+  document.getElementById("start-game")?.addEventListener("click", () => {
+    document.getElementById("instructions")!.classList.add("hidden");
+    document.getElementById("game-board")!.classList.remove("hidden");
+    initGame();
+    startTimer();
+    playSound("start");
+  });
+
+  document.getElementById("play-again")?.addEventListener("click", () => {
+    score = 0;
+    level = 1;
+    timeLeft = 60;
+    completed = 0;
+    combo = 1;
+    maxCombo = 1;
+    correctStreak = 0;
+    document.getElementById("game-over")!.classList.add("hidden");
+    document.getElementById("instructions")!.classList.remove("hidden");
+    updateUI();
+  });
+
+  updateUI();
+</script>

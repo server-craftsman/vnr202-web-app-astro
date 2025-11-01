@@ -1,0 +1,70 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icons.astro";
+---
+
+<Layout title="404 - Trang không tìm thấy">
+  <main
+    class="min-h-screen bg-gradient-to-b from-stone-950 via-neutral-900 to-stone-900 flex items-center justify-center px-6"
+  >
+    <div class="text-center max-w-2xl mx-auto">
+      <div
+        class="text-9xl font-bold bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent mb-8"
+      >
+        404
+      </div>
+
+      <h1
+        class="font-['Playfair_Display'] text-4xl md:text-5xl font-bold text-white mb-4"
+      >
+        Trang không tìm thấy
+      </h1>
+
+      <p class="text-neutral-400 text-lg mb-8">
+        Có vẻ như trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.
+      </p>
+
+      <div class="flex gap-4 justify-center flex-wrap">
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-600 text-stone-950 font-semibold rounded-full hover:from-amber-400 hover:to-yellow-500 transition-all duration-300 shadow-xl shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-105"
+        >
+          <Icon name="home" class="w-5 h-5" />
+          Về trang chủ
+        </a>
+
+        <a
+          href="/#timeline"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-stone-800/50 border border-amber-500/30 text-amber-300 font-semibold rounded-full hover:bg-stone-800/80 hover:border-amber-500/50 transition-all duration-300"
+        >
+          <Icon name="calendar" class="w-5 h-5" />
+          Dòng thời gian
+        </a>
+      </div>
+
+      <div class="mt-12 pt-8 border-t border-stone-800">
+        <p class="text-neutral-500 text-sm">Các trang phổ biến:</p>
+        <div class="flex gap-4 justify-center mt-4 flex-wrap">
+          <a
+            href="/#gallery"
+            class="text-amber-400 hover:text-amber-300 transition-colors"
+          >
+            Bộ sưu tập
+          </a>
+          <a
+            href="/#reasons"
+            class="text-amber-400 hover:text-amber-300 transition-colors"
+          >
+            Lý do
+          </a>
+          <a
+            href="/#experience"
+            class="text-amber-400 hover:text-amber-300 transition-colors"
+          >
+            Trải nghiệm
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>

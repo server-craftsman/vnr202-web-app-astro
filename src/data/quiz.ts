@@ -129,5 +129,145 @@ export const quizQuestions: QuizQuestion[] = [
     difficulty: 'medium',
     category: 'economy'
   },
+  {
+    id: 'q11',
+    question: 'Năm 1985, tỷ lệ lạm phát ở Việt Nam đạt mức nào?',
+    options: [
+      '50%',
+      '100%',
+      '300%',
+      'Trên 400%'
+    ],
+    correctAnswer: 3,
+    explanation: 'Năm 1985, lạm phát tăng vọt lên trên 400%, gây ra khủng hoảng kinh tế nghiêm trọng.',
+    difficulty: 'hard',
+    category: 'economy'
+  },
+  {
+    id: 'q12',
+    question: 'Hệ thống tem phiếu chính thức được áp dụng vào năm nào?',
+    options: [
+      '1976',
+      '1978',
+      '1980',
+      '1982'
+    ],
+    correctAnswer: 2,
+    explanation: 'Hệ thống tem phiếu chính thức được áp dụng trên toàn quốc vào năm 1980.',
+    difficulty: 'medium',
+    category: 'history'
+  },
+  {
+    id: 'q13',
+    question: 'Chợ cóc là hiện tượng gì trong thời bao cấp?',
+    options: [
+      'Chợ chính thức của nhà nước',
+      'Nơi trao đổi hàng hóa ngoài hệ thống phân phối',
+      'Chợ dành cho nông dân',
+      'Chợ buôn bán hàng nhập khẩu'
+    ],
+    correctAnswer: 1,
+    explanation: 'Chợ cóc là nơi người dân trao đổi hàng hóa với nhau ngoài hệ thống phân phối chính thức của nhà nước.',
+    difficulty: 'easy',
+    category: 'society'
+  },
+  {
+    id: 'q14',
+    question: 'Xí nghiệp quốc doanh là gì?',
+    options: [
+      'Xí nghiệp tư nhân',
+      'Xí nghiệp do nhà nước sở hữu và quản lý',
+      'Xí nghiệp hợp tác với nước ngoài',
+      'Xí nghiệp do hợp tác xã quản lý'
+    ],
+    correctAnswer: 1,
+    explanation: 'Xí nghiệp quốc doanh là các xí nghiệp do nhà nước sở hữu và quản lý hoàn toàn.',
+    difficulty: 'easy',
+    category: 'economy'
+  },
+  {
+    id: 'q15',
+    question: 'Công điểm trong hợp tác xã được dùng để làm gì?',
+    options: [
+      'Đổi lấy hàng hóa',
+      'Tính thu nhập của mỗi người',
+      'Tham gia bầu cử',
+      'Đi xe buýt miễn phí'
+    ],
+    correctAnswer: 1,
+    explanation: 'Công điểm quyết định thu nhập của mỗi người trong hợp tác xã - người làm nhiều được nhiều công điểm và nhận nhiều tiền hơn.',
+    difficulty: 'medium',
+    category: 'economy'
+  },
+  {
+    id: 'q16',
+    question: 'Thời bao cấp, người dân được cấp bao nhiêu kg thịt mỗi tháng?',
+    options: [
+      '2-3 kg',
+      '0.5-1 kg',
+      '3-5 kg',
+      'Không được cấp thịt'
+    ],
+    correctAnswer: 1,
+    explanation: 'Định mức thịt rất thấp, mỗi người chỉ được cấp khoảng 0.5-1kg thịt/tháng, và nhiều tháng không có thịt để bán.',
+    difficulty: 'hard',
+    category: 'society'
+  },
+  {
+    id: 'q17',
+    question: 'Đại hội V Đảng (1982) có nội dung gì đáng chú ý?',
+    options: [
+      'Bắt đầu thảo luận về đổi mới',
+      'Quyết định áp dụng bao cấp',
+      'Thông qua chính sách Đổi Mới',
+      'Kết thúc thời bao cấp'
+    ],
+    correctAnswer: 0,
+    explanation: 'Đại hội V bắt đầu xuất hiện ý kiến về cần thay đổi mô hình kinh tế, thảo luận về việc áp dụng một số cơ chế thị trường giới hạn.',
+    difficulty: 'medium',
+    category: 'history'
+  },
+  {
+    id: 'q18',
+    question: 'Khoán hộ là gì?',
+    options: [
+      'Cho phép nông dân tự chủ sản xuất trên phần ruộng được giao',
+      'Bắt buộc nông dân hợp tác hóa',
+      'Quốc hữu hóa đất đai',
+      'Phân chia đất đai cho tư nhân'
+    ],
+    correctAnswer: 0,
+    explanation: 'Khoán hộ cho phép nông dân tự chủ sản xuất trên phần ruộng được giao, giữ lại phần sản xuất vượt mức.',
+    difficulty: 'medium',
+    category: 'economy'
+  },
+  {
+    id: 'q19',
+    question: 'Năm 1983, tình hình kinh tế Việt Nam như thế nào?',
+    options: [
+      'Phát triển mạnh',
+      'Nạn đói và khủng hoảng lương thực nghiêm trọng',
+      'Xuất khẩu tăng trưởng',
+      'Ổn định và phát triển'
+    ],
+    correctAnswer: 1,
+    explanation: 'Năm 1983, Việt Nam đối mặt với nạn đói và khủng hoảng lương thực nghiêm trọng do hạn hán và chính sách hợp tác hóa kém hiệu quả.',
+    difficulty: 'hard',
+    category: 'history'
+  },
+  {
+    id: 'q20',
+    question: 'Con phe là thuật ngữ chỉ ai?',
+    options: [
+      'Người nông dân',
+      'Người buôn bán ngoài luồng, không cần tem phiếu',
+      'Công nhân xí nghiệp',
+      'Người làm việc trong hợp tác xã'
+    ],
+    correctAnswer: 1,
+    explanation: 'Con phe là những người buôn bán ngoài luồng, bán hàng với giá cao hơn nhưng không cần tem phiếu.',
+    difficulty: 'easy',
+    category: 'society'
+  }
 ];
 

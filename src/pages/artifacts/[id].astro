@@ -1,32 +1,44 @@
 ---
-import { artifacts } from '../../data/artifacts';
-import Layout from '../../layouts/Layout.astro';
-import Icon from '../../components/Icons.astro';
+import { artifacts } from "../../data/artifacts";
+import Layout from "../../layouts/Layout.astro";
+import Icon from "../../components/Icons.astro";
 
 export async function getStaticPaths() {
-  return artifacts.map(a => ({ params: { id: a.id } }));
+  return artifacts.map((a) => ({ params: { id: a.id } }));
 }
 
 const { id } = Astro.params;
-const artifact = artifacts.find(a => a.id === id);
+const artifact = artifacts.find((a) => a.id === id);
 
 if (!artifact) {
-  return Astro.redirect('/404');
+  return Astro.redirect("/404");
 }
 
 // Related artifacts (same category or year)
 const relatedArtifacts = artifacts
-  .filter(a => a.id !== artifact.id && (a.category === artifact.category || a.year === artifact.year))
+  .filter(
+    (a) =>
+      a.id !== artifact.id &&
+      (a.category === artifact.category || a.year === artifact.year)
+  )
   .slice(0, 3);
 ---
 
-<Layout title={artifact.title + ' | Hiện Vật Bao Cấp'}>
-  <main class="min-h-screen bg-gradient-to-b from-stone-950 via-neutral-900 to-stone-900 py-16 px-6">
+<Layout title={artifact.title + " | Hiện Vật Bao Cấp"}>
+  <main
+    class="min-h-screen bg-gradient-to-b from-stone-950 via-neutral-900 to-stone-900 py-16 px-6"
+  >
     <div class="max-w-6xl mx-auto">
       <!-- Breadcrumb & Back -->
       <div class="flex items-center gap-4 mb-12">
-        <a href="/#gallery" class="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-semibold transition-colors group">
-          <Icon name="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+        <a
+          href="/#gallery"
+          class="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-semibold transition-colors group"
+        >
+          <Icon
+            name="arrow-left"
+            class="w-5 h-5 group-hover:-translate-x-1 transition-transform"
+          />
           Trở về Bộ sưu tập
         </a>
         <span class="text-neutral-600">/</span>
@@ -37,23 +49,37 @@ const relatedArtifacts = artifacts
       <div class="grid md:grid-cols-2 gap-12 mb-16">
         <!-- Image Section -->
         <div>
-          <div class="sticky top-24 bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/30 rounded-3xl overflow-hidden shadow-2xl">
-            <div class="relative aspect-square bg-gradient-to-br from-amber-900/20 to-yellow-900/10">
-              {artifact.image ? (
-                <img 
-                  src={artifact.image} 
-                  alt={artifact.title}
-                  class="w-full h-full object-cover"
-                />
-              ) : (
-                <div class="flex items-center justify-center h-full">
-                  <span class="text-9xl opacity-40">
-                    {artifact.category === 'document' ? '📄' : artifact.category === 'photo' ? '📷' : artifact.category === 'newspaper' ? '📰' : '🎯'}
-                  </span>
-                </div>
-              )}
+          <div
+            class="sticky top-24 bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/30 rounded-3xl overflow-hidden shadow-2xl"
+          >
+            <div
+              class="relative aspect-square bg-gradient-to-br from-amber-900/20 to-yellow-900/10"
+            >
+              {
+                artifact.image ? (
+                  <img
+                    src={artifact.image}
+                    alt={artifact.title}
+                    class="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div class="flex items-center justify-center h-full">
+                    <span class="text-9xl opacity-40">
+                      {artifact.category === "document"
+                        ? "📄"
+                        : artifact.category === "photo"
+                          ? "📷"
+                          : artifact.category === "newspaper"
+                            ? "📰"
+                            : "🎯"}
+                    </span>
+                  </div>
+                )
+              }
               <!-- Year Badge -->
-              <div class="absolute top-6 right-6 px-4 py-2 bg-black/90 backdrop-blur-sm rounded-2xl border border-amber-500/30">
+              <div
+                class="absolute top-6 right-6 px-4 py-2 bg-black/90 backdrop-blur-sm rounded-2xl border border-amber-500/30"
+              >
                 <div class="flex items-center gap-2">
                   <Icon name="calendar" class="w-4 h-4 text-amber-400" />
                   <span class="text-amber-400 font-bold">{artifact.year}</span>
@@ -66,7 +92,12 @@ const relatedArtifacts = artifacts
               <div class="flex items-center justify-between text-sm">
                 <div class="flex items-center gap-2 text-neutral-400">
                   <Icon name="cube" class="w-4 h-4" />
-                  <span>Danh mục: <span class="text-amber-300 font-semibold capitalize">{artifact.category}</span></span>
+                  <span
+                    >Danh mục: <span
+                      class="text-amber-300 font-semibold capitalize"
+                      >{artifact.category}</span
+                    ></span
+                  >
                 </div>
               </div>
             </div>
@@ -77,7 +108,9 @@ const relatedArtifacts = artifacts
         <div class="space-y-8">
           <!-- Title & Description -->
           <div>
-            <h1 class="font-['Playfair_Display'] text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
+            <h1
+              class="font-['Playfair_Display'] text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight"
+            >
               {artifact.title}
             </h1>
             <p class="text-2xl text-neutral-300 leading-relaxed">
@@ -87,39 +120,101 @@ const relatedArtifacts = artifacts
 
           <!-- Tags -->
           <div class="flex flex-wrap gap-3">
-            {artifact.tags.map(tag => (
-              <span class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/15 border border-amber-500/30 rounded-full text-amber-300 font-medium">
-                <Icon name="tag" class="w-4 h-4" />
-                {tag}
-              </span>
-            ))}
+            {
+              artifact.tags.map((tag) => (
+                <span class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/15 border border-amber-500/30 rounded-full text-amber-300 font-medium">
+                  <Icon name="tag" class="w-4 h-4" />
+                  {tag}
+                </span>
+              ))
+            }
           </div>
 
           <!-- Divider -->
-          <div class="h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent"></div>
+          <div
+            class="h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent"
+          >
+          </div>
+
+          <!-- Video Section -->
+          {
+            artifact.video && (
+              <div class="bg-gradient-to-br from-red-900/10 to-orange-900/5 border border-red-500/20 rounded-2xl p-8">
+                <div class="flex items-center gap-3 mb-4">
+                  <Icon name="photo" class="w-6 h-6 text-red-400" />
+                  <h2 class="font-['Playfair_Display'] text-2xl font-bold text-red-300">
+                    Video liên quan
+                  </h2>
+                </div>
+                <div
+                  class="relative aspect-video bg-black/50 rounded-xl overflow-hidden group cursor-pointer"
+                  id="video-container"
+                  data-video-url={artifact.video}
+                >
+                  <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-900/50 to-black/50 group-hover:from-red-800/60 group-hover:to-black/60 transition-all duration-300">
+                    <div class="text-center">
+                      <div class="w-20 h-20 mx-auto mb-4 bg-red-600/90 rounded-full flex items-center justify-center group-hover:bg-red-500 group-hover:scale-110 transition-all duration-300 shadow-2xl">
+                        <svg
+                          class="w-10 h-10 text-white ml-1"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                      <p class="text-white font-semibold text-lg">
+                        Xem video trên YouTube
+                      </p>
+                      <p class="text-neutral-300 text-sm mt-2">
+                        Nhấp để mở video
+                      </p>
+                    </div>
+                  </div>
+                  <img
+                    src={artifact.image || ""}
+                    alt={artifact.title}
+                    class="w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity duration-300"
+                  />
+                </div>
+              </div>
+            )
+          }
 
           <!-- Historical Context -->
-          <div class="bg-gradient-to-br from-amber-900/10 to-yellow-900/5 border border-amber-500/20 rounded-2xl p-8">
+          <div
+            class="bg-gradient-to-br from-amber-900/10 to-yellow-900/5 border border-amber-500/20 rounded-2xl p-8"
+          >
             <div class="flex items-center gap-3 mb-4">
               <Icon name="book" class="w-6 h-6 text-amber-400" />
-              <h2 class="font-['Playfair_Display'] text-2xl font-bold text-amber-300">
+              <h2
+                class="font-['Playfair_Display'] text-2xl font-bold text-amber-300"
+              >
                 Bối cảnh lịch sử
               </h2>
             </div>
             <p class="text-neutral-200 leading-relaxed text-lg mb-6">
-              {artifact.details || 'Hiện vật này là một phần quan trọng trong bộ sưu tập về thời kỳ bao cấp, phản ánh đời sống và hệ thống phân phối hàng hóa của người dân Việt Nam trong giai đoạn 1975-1986.'}
+              {
+                artifact.details ||
+                  "Hiện vật này là một phần quan trọng trong bộ sưu tập về thời kỳ bao cấp, phản ánh đời sống và hệ thống phân phối hàng hóa của người dân Việt Nam trong giai đoạn 1975-1986."
+              }
             </p>
 
             <!-- Additional Info Boxes -->
             <div class="grid sm:grid-cols-2 gap-4 mt-6">
-              <div class="bg-stone-900/50 border border-amber-500/10 rounded-xl p-4">
+              <div
+                class="bg-stone-900/50 border border-amber-500/10 rounded-xl p-4"
+              >
                 <div class="flex items-center gap-2 mb-2">
                   <Icon name="clock" class="w-5 h-5 text-amber-400" />
                   <h3 class="font-semibold text-amber-300">Thời kỳ</h3>
                 </div>
-                <p class="text-neutral-300 text-sm">Thời kỳ bao cấp ({artifact.year})</p>
+                <p class="text-neutral-300 text-sm">
+                  Thời kỳ bao cấp ({artifact.year})
+                </p>
               </div>
-              <div class="bg-stone-900/50 border border-amber-500/10 rounded-xl p-4">
+              <div
+                class="bg-stone-900/50 border border-amber-500/10 rounded-xl p-4"
+              >
                 <div class="flex items-center gap-2 mb-2">
                   <Icon name="information" class="w-5 h-5 text-amber-400" />
                   <h3 class="font-semibold text-amber-300">Tình trạng</h3>
@@ -130,25 +225,45 @@ const relatedArtifacts = artifacts
           </div>
 
           <!-- Fun Facts -->
-          <div class="bg-gradient-to-br from-purple-900/10 to-indigo-900/5 border border-purple-500/20 rounded-2xl p-8">
+          <div
+            class="bg-gradient-to-br from-purple-900/10 to-indigo-900/5 border border-purple-500/20 rounded-2xl p-8"
+          >
             <div class="flex items-center gap-3 mb-4">
               <Icon name="sparkles" class="w-6 h-6 text-purple-400" />
-              <h2 class="font-['Playfair_Display'] text-2xl font-bold text-purple-300">
+              <h2
+                class="font-['Playfair_Display'] text-2xl font-bold text-purple-300"
+              >
                 Bạn có biết?
               </h2>
             </div>
             <ul class="space-y-3">
               <li class="flex items-start gap-3 text-neutral-200">
-                <Icon name="check" class="w-5 h-5 text-purple-400 mt-1 flex-shrink-0" />
-                <span>Mỗi gia đình chỉ được cấp phiếu mua hàng theo định mức nghiêm ngặt</span>
+                <Icon
+                  name="check"
+                  class="w-5 h-5 text-purple-400 mt-1 flex-shrink-0"
+                />
+                <span
+                  >Mỗi gia đình chỉ được cấp phiếu mua hàng theo định mức nghiêm
+                  ngặt</span
+                >
               </li>
               <li class="flex items-start gap-3 text-neutral-200">
-                <Icon name="check" class="w-5 h-5 text-purple-400 mt-1 flex-shrink-0" />
-                <span>Người dân thường phải xếp hàng từ sáng sớm để mua được hàng</span>
+                <Icon
+                  name="check"
+                  class="w-5 h-5 text-purple-400 mt-1 flex-shrink-0"
+                />
+                <span
+                  >Người dân thường phải xếp hàng từ sáng sớm để mua được hàng</span
+                >
               </li>
               <li class="flex items-start gap-3 text-neutral-200">
-                <Icon name="check" class="w-5 h-5 text-purple-400 mt-1 flex-shrink-0" />
-                <span>Giá cả được nhà nước quy định chặt chẽ, không theo thị trường</span>
+                <Icon
+                  name="check"
+                  class="w-5 h-5 text-purple-400 mt-1 flex-shrink-0"
+                />
+                <span
+                  >Giá cả được nhà nước quy định chặt chẽ, không theo thị trường</span
+                >
               </li>
             </ul>
           </div>
@@ -156,40 +271,168 @@ const relatedArtifacts = artifacts
       </div>
 
       <!-- Related Artifacts -->
-      {relatedArtifacts.length > 0 && (
-        <div class="mt-20">
-          <h2 class="font-['Playfair_Display'] text-3xl md:text-4xl font-bold mb-8 text-center bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent">
-            Hiện vật liên quan
-          </h2>
-          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {relatedArtifacts.map((related) => (
-              <a href={`/artifacts/${related.id}`} class="group block">
-                <div class="bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/20 rounded-2xl overflow-hidden hover:border-amber-500/50 hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500">
-                  <div class="relative aspect-square bg-gradient-to-br from-amber-900/20 to-yellow-900/10">
-                    {related.image ? (
-                      <img src={related.image} alt={related.title} class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                    ) : (
-                      <div class="flex items-center justify-center h-full">
-                        <span class="text-6xl opacity-40">
-                          {related.category === 'document' ? '📄' : related.category === 'photo' ? '📷' : related.category === 'newspaper' ? '📰' : '🎯'}
-                        </span>
-                      </div>
-                    )}
+      {
+        relatedArtifacts.length > 0 && (
+          <div class="mt-20">
+            <h2 class="font-['Playfair_Display'] text-3xl md:text-4xl font-bold mb-8 text-center bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent">
+              Hiện vật liên quan
+            </h2>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedArtifacts.map((related) => (
+                <a href={`/artifacts/${related.id}`} class="group block">
+                  <div class="bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/20 rounded-2xl overflow-hidden hover:border-amber-500/50 hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500">
+                    <div class="relative aspect-square bg-gradient-to-br from-amber-900/20 to-yellow-900/10">
+                      {related.image ? (
+                        <img
+                          src={related.image}
+                          alt={related.title}
+                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                      ) : (
+                        <div class="flex items-center justify-center h-full">
+                          <span class="text-6xl opacity-40">
+                            {related.category === "document"
+                              ? "📄"
+                              : related.category === "photo"
+                                ? "📷"
+                                : related.category === "newspaper"
+                                  ? "📰"
+                                  : "🎯"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div class="p-6">
+                      <h3 class="text-lg font-bold text-white group-hover:text-amber-300 transition-colors mb-2">
+                        {related.title}
+                      </h3>
+                      <p class="text-neutral-400 text-sm line-clamp-2">
+                        {related.description}
+                      </p>
+                    </div>
                   </div>
-                  <div class="p-6">
-                    <h3 class="text-lg font-bold text-white group-hover:text-amber-300 transition-colors mb-2">
-                      {related.title}
-                    </h3>
-                    <p class="text-neutral-400 text-sm line-clamp-2">
-                      {related.description}
-                    </p>
-                  </div>
-                </div>
-              </a>
-            ))}
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </div>
   </main>
+
+  <!-- YouTube Video Modal -->
+  {
+    artifact.video && (
+      <div
+        id="youtube-modal"
+        class="fixed inset-0 bg-black/95 backdrop-blur-lg z-[9999] hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300"
+      >
+        <button
+          class="absolute top-4 right-4 z-10 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+          id="close-video-modal"
+          aria-label="Đóng video"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+        <div class="relative w-full max-w-6xl aspect-video bg-black rounded-xl overflow-hidden">
+          <iframe
+            id="youtube-iframe"
+            class="w-full h-full"
+            src=""
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          />
+        </div>
+      </div>
+    )
+  }
+
+  <script>
+    (function () {
+      const videoContainer = document.getElementById("video-container");
+      const modal = document.getElementById("youtube-modal");
+      const iframe = document.getElementById("youtube-iframe");
+      const closeBtn = document.getElementById("close-video-modal");
+
+      if (!videoContainer || !modal || !iframe) return;
+
+      function extractVideoId(url: string) {
+        const regExp =
+          /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return match && match[2].length === 11 ? match[2] : "";
+      }
+
+      function openVideo() {
+        const videoUrl = videoContainer?.getAttribute("data-video-url");
+        if (!videoUrl || !iframe || !modal) return;
+
+        const videoId = extractVideoId(videoUrl);
+        if (!videoId) {
+          // If can't extract ID, open in new tab
+          window.open(videoUrl, "_blank");
+          return;
+        }
+
+        (iframe as HTMLIFrameElement).src =
+          `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        requestAnimationFrame(() => {
+          if (modal) {
+            modal.classList.remove("opacity-0");
+            modal.classList.add("opacity-100");
+          }
+        });
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeVideo() {
+        if (!modal || !iframe) return;
+
+        modal.classList.remove("opacity-100");
+        modal.classList.add("opacity-0");
+        setTimeout(() => {
+          if (modal && iframe) {
+            modal.classList.remove("flex");
+            modal.classList.add("hidden");
+            (iframe as HTMLIFrameElement).src = "";
+            document.body.style.overflow = "";
+          }
+        }, 300);
+      }
+
+      videoContainer?.addEventListener("click", openVideo);
+      closeBtn?.addEventListener("click", closeVideo);
+
+      modal?.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          closeVideo();
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (
+          e.key === "Escape" &&
+          modal &&
+          !modal.classList.contains("hidden")
+        ) {
+          closeVideo();
+        }
+      });
+    })();
+  </script>
 </Layout>

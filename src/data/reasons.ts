@@ -85,6 +85,45 @@ export const baoCapReasons: BaoCapReason[] = [
         ],
         icon: '🏭',
         priority: 6
+    },
+    {
+        id: 'international-isolation',
+        title: 'Bị cô lập quốc tế',
+        description: 'Việt Nam bị cô lập về ngoại giao và kinh tế sau chiến tranh',
+        details: [
+            'Hoa Kỳ và các nước phương Tây áp đặt cấm vận',
+            'Không thể tiếp cận thị trường quốc tế',
+            'Chỉ có thể giao thương với khối xã hội chủ nghĩa',
+            'Thiếu nguồn vốn đầu tư từ bên ngoài'
+        ],
+        icon: '🚫',
+        priority: 7
+    },
+    {
+        id: 'war-destruction',
+        title: 'Hậu quả của chiến tranh kéo dài',
+        description: 'Chiến tranh 30 năm tàn phá hạ tầng và nền kinh tế',
+        details: [
+            'Hạ tầng giao thông, điện nước bị tàn phá nghiêm trọng',
+            'Thiếu nhân lực lành nghề',
+            'Nền kinh tế bị gián đoạn suốt nhiều thập kỷ',
+            'Cần thời gian dài để khôi phục và xây dựng lại'
+        ],
+        icon: '💥',
+        priority: 8
+    },
+    {
+        id: 'social-equality',
+        title: 'Đảm bảo công bằng xã hội',
+        description: 'Cơ chế bao cấp đảm bảo mọi người đều có quyền tiếp cận hàng hóa cơ bản',
+        details: [
+            'Phân phối hàng hóa theo định mức cho mọi người',
+            'Không có sự phân hóa giàu nghèo quá lớn',
+            'Mọi người đều được đảm bảo mức sống tối thiểu',
+            'Ưu tiên cho trẻ em, người già và người có công'
+        ],
+        icon: '⚖️',
+        priority: 9
     }
 ];
 

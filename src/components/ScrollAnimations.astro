@@ -1,0 +1,924 @@
+---
+
+---
+
+<style>
+  /* ============================================
+     BEFORE ANIMATION STATES (Initial States)
+     ============================================ */
+
+  body:not(.page-loaded) {
+    overflow: hidden;
+  }
+
+  body:not(.page-loaded) [data-animate-on-load] {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    pointer-events: none;
+    filter: blur(10px);
+  }
+
+  section[data-section-animate] {
+    position: relative;
+    opacity: 0;
+    transform: translateY(60px) scale(0.98);
+    filter: blur(8px);
+  }
+
+  section[data-section-animate].before-animate {
+    opacity: 0;
+    transform: translateY(60px) scale(0.98);
+    filter: blur(8px);
+    transition: none;
+  }
+
+  /* ============================================
+     GLOW & SHIMMER EFFECTS
+     ============================================ */
+
+  @keyframes glow-pulse {
+    0%,
+    100% {
+      box-shadow:
+        0 0 20px rgba(212, 175, 55, 0.3),
+        0 0 40px rgba(212, 175, 55, 0.2),
+        0 0 60px rgba(212, 175, 55, 0.1);
+    }
+    50% {
+      box-shadow:
+        0 0 30px rgba(212, 175, 55, 0.5),
+        0 0 60px rgba(212, 175, 55, 0.3),
+        0 0 90px rgba(212, 175, 55, 0.2);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  @keyframes gradient-shift {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .glow-on-animate {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+
+  .shimmer-effect {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 3s infinite;
+  }
+
+  /* ============================================
+     DURING ANIMATION STATES (Active States)
+     ============================================ */
+
+  .fade-in-scale {
+    opacity: 0;
+    transform: translateY(40px) scale(0.9) rotateX(10deg);
+    filter: blur(10px);
+    transition:
+      opacity 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .fade-in-scale.animated {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0deg);
+    filter: blur(0px);
+  }
+
+  .slide-in-left {
+    opacity: 0;
+    transform: translateX(-100px) rotateY(15deg);
+    filter: blur(8px);
+    transition:
+      opacity 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .slide-in-left.animated {
+    opacity: 1;
+    transform: translateX(0) rotateY(0deg);
+    filter: blur(0px);
+  }
+
+  .slide-in-right {
+    opacity: 0;
+    transform: translateX(100px) rotateY(-15deg);
+    filter: blur(8px);
+    transition:
+      opacity 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .slide-in-right.animated {
+    opacity: 1;
+    transform: translateX(0) rotateY(0deg);
+    filter: blur(0px);
+  }
+
+  .slide-in-bottom {
+    opacity: 0;
+    transform: translateY(80px) scale(0.95);
+    filter: blur(10px);
+    transition:
+      opacity 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .slide-in-bottom.animated {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+
+  .scale-in-rotate {
+    opacity: 0;
+    transform: scale(0.7) rotate(-10deg) rotateY(20deg);
+    filter: blur(12px);
+    transition:
+      opacity 1.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 1.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 1.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .scale-in-rotate.animated {
+    opacity: 1;
+    transform: scale(1) rotate(0deg) rotateY(0deg);
+    filter: blur(0px);
+  }
+
+  .stagger-item {
+    opacity: 0;
+    transform: translateY(50px) scale(0.95);
+    filter: blur(8px);
+    transition:
+      opacity 1s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 1s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .stagger-item.animated {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+
+  .section-header {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.95);
+    filter: blur(10px);
+    transition:
+      opacity 1.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 1.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 1.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .section-header.animated {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+
+  .reveal {
+    position: relative;
+    opacity: 0;
+    transform: translateY(60px) scale(0.95);
+    filter: blur(10px);
+    transition:
+      opacity 1.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 1.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 1.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .reveal.animated {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+
+  /* ============================================
+     AFTER ANIMATION STATES (Final States)
+     ============================================ */
+
+  .animated {
+    transition:
+      opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 0.3s ease-out,
+      box-shadow 0.3s ease-out;
+  }
+
+  /* Magnetic Hover Effect */
+  .animated.magnetic-hover {
+    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  /* 3D Hover Effect */
+  .animated.after-animate {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+
+  .animated.after-animate:hover {
+    transform: translateY(-10px) rotateX(5deg) rotateY(-5deg) scale(1.02);
+    box-shadow:
+      0 20px 60px rgba(212, 175, 55, 0.3),
+      0 0 40px rgba(212, 175, 55, 0.2),
+      0 0 80px rgba(212, 175, 55, 0.1);
+    filter: brightness(1.1);
+  }
+
+  /* ============================================
+     NAVIGATION EFFECTS
+     ============================================ */
+
+  nav {
+    transition:
+      backdrop-filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .nav-scrolled {
+    backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(23, 23, 23, 0.98);
+    box-shadow:
+      0 10px 40px rgba(0, 0, 0, 0.5),
+      0 0 20px rgba(212, 175, 55, 0.1);
+    transform: translateY(0);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  }
+
+  .nav-hidden {
+    transform: translateY(-100%);
+  }
+
+  /* ============================================
+     PARALLAX EFFECTS
+     ============================================ */
+
+  .parallax-container {
+    will-change: transform;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+
+  .parallax-slow {
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .parallax-medium {
+    transition: transform 0.08s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .parallax-fast {
+    transition: transform 0.03s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ============================================
+     DELAY CLASSES FOR STAGGER
+     ============================================ */
+
+  .delay-50 {
+    transition-delay: 50ms;
+  }
+  .delay-100 {
+    transition-delay: 100ms;
+  }
+  .delay-150 {
+    transition-delay: 150ms;
+  }
+  .delay-200 {
+    transition-delay: 200ms;
+  }
+  .delay-250 {
+    transition-delay: 250ms;
+  }
+  .delay-300 {
+    transition-delay: 300ms;
+  }
+  .delay-400 {
+    transition-delay: 400ms;
+  }
+  .delay-500 {
+    transition-delay: 500ms;
+  }
+  .delay-600 {
+    transition-delay: 600ms;
+  }
+  .delay-700 {
+    transition-delay: 700ms;
+  }
+  .delay-800 {
+    transition-delay: 800ms;
+  }
+  .delay-900 {
+    transition-delay: 900ms;
+  }
+  .delay-1000 {
+    transition-delay: 1000ms;
+  }
+
+  /* ============================================
+     PAGE LOAD ANIMATION
+     ============================================ */
+
+  @keyframes pageLoadFade {
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+      filter: blur(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+      filter: blur(0px);
+    }
+  }
+
+  body.page-loaded {
+    animation: pageLoadFade 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* ============================================
+     SECTION REVEAL ANIMATION
+     ============================================ */
+
+  section[data-section-animate].animated {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+    transition:
+      opacity 1.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 1.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 1.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* ============================================
+     SCROLL INDICATOR
+     ============================================ */
+
+  .scroll-indicator-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .scroll-indicator-hidden {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+    pointer-events: none;
+  }
+
+  /* ============================================
+     CURSOR FOLLOW EFFECT
+     ============================================ */
+
+  .cursor-glow {
+    position: fixed;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(212, 175, 55, 0.1) 0%,
+      rgba(212, 175, 55, 0.05) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease-out;
+    z-index: 9999;
+    mix-blend-mode: screen;
+    opacity: 0;
+  }
+
+  .cursor-glow.active {
+    opacity: 1;
+  }
+
+  /* ============================================
+     PARTICLE EFFECTS ON SCROLL
+     ============================================ */
+
+  @keyframes particle-float {
+    0%,
+    100% {
+      transform: translateY(0) translateX(0) rotate(0deg);
+      opacity: 0.3;
+    }
+    50% {
+      transform: translateY(-20px) translateX(10px) rotate(180deg);
+      opacity: 0.6;
+    }
+  }
+
+  .particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(212, 175, 55, 0.6);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particle-float 4s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+  }
+
+  /* ============================================
+     GRADIENT BORDER ANIMATION
+     ============================================ */
+
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(45deg, #d4af37, #f4bf37, #d4af37);
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+  }
+
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    background: inherit;
+    border-radius: inherit;
+    z-index: -1;
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    "use strict";
+
+    let pageLoaded = false;
+    let sectionsInitialized = false;
+    let cursorGlow = null;
+    let particles = [];
+
+    // ============================================
+    // CURSOR GLOW EFFECT
+    // ============================================
+
+    function initCursorGlow() {
+      if (cursorGlow) return;
+
+      cursorGlow = document.createElement("div");
+      cursorGlow.className = "cursor-glow";
+      document.body.appendChild(cursorGlow);
+
+      let mouseX = 0;
+      let mouseY = 0;
+      let glowX = 0;
+      let glowY = 0;
+
+      document.addEventListener("mousemove", (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        cursorGlow.classList.add("active");
+      });
+
+      function animateGlow() {
+        glowX += (mouseX - glowX) * 0.1;
+        glowY += (mouseY - glowY) * 0.1;
+        cursorGlow.style.left = glowX + "px";
+        cursorGlow.style.top = glowY + "px";
+        requestAnimationFrame(animateGlow);
+      }
+      animateGlow();
+
+      document.addEventListener("mouseleave", () => {
+        cursorGlow.classList.remove("active");
+      });
+    }
+
+    // ============================================
+    // PARTICLE EFFECTS ON SCROLL
+    // ============================================
+
+    function createParticle(x, y) {
+      const particle = document.createElement("div");
+      particle.className = "particle";
+      particle.style.left = x + "px";
+      particle.style.top = y + "px";
+      particle.style.animationDelay = Math.random() * 2 + "s";
+      document.body.appendChild(particle);
+
+      setTimeout(() => {
+        particle.remove();
+      }, 4000);
+    }
+
+    function initParticleEffects() {
+      let lastScrollY = window.scrollY;
+      let particleCount = 0;
+
+      window.addEventListener(
+        "scroll",
+        () => {
+          const currentScrollY = window.scrollY;
+          const scrollDelta = Math.abs(currentScrollY - lastScrollY);
+
+          if (scrollDelta > 5 && particleCount < 3) {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            for (let i = 0; i < 2; i++) {
+              setTimeout(() => {
+                createParticle(
+                  Math.random() * viewportWidth,
+                  Math.random() * viewportHeight
+                );
+              }, i * 100);
+            }
+            particleCount++;
+            setTimeout(() => {
+              particleCount = 0;
+            }, 1000);
+          }
+
+          lastScrollY = currentScrollY;
+        },
+        { passive: true }
+      );
+    }
+
+    // ============================================
+    // MAGNETIC HOVER EFFECT
+    // ============================================
+
+    function initMagneticHover() {
+      const magneticElements = document.querySelectorAll(
+        ".stagger-item, .section-header, .reveal, .btn"
+      );
+
+      magneticElements.forEach((element) => {
+        element.addEventListener("mousemove", (e) => {
+          const rect = element.getBoundingClientRect();
+          const x = e.clientX - rect.left - rect.width / 2;
+          const y = e.clientY - rect.top - rect.height / 2;
+
+          const moveX = x * 0.3;
+          const moveY = y * 0.3;
+
+          element.style.transform = `translate(${moveX}px, ${moveY}px) scale(1.05)`;
+        });
+
+        element.addEventListener("mouseleave", () => {
+          element.style.transform = "";
+        });
+      });
+    }
+
+    // ============================================
+    // BEFORE ANIMATION: Initial Setup
+    // ============================================
+
+    function markPageLoaded() {
+      if (!pageLoaded) {
+        document.body.classList.add("page-loaded");
+        document.body.style.overflow = "";
+        pageLoaded = true;
+      }
+    }
+
+    // ============================================
+    // DURING ANIMATION: Intersection Observer
+    // ============================================
+
+    const observerOptions = {
+      root: null,
+      rootMargin: "-5% 0px -5% 0px",
+      threshold: [0, 0.1, 0.3, 0.5, 0.7, 1],
+    };
+
+    const fadeObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const { target, intersectionRatio, isIntersecting } = entry;
+
+        if (isIntersecting && intersectionRatio > 0.1) {
+          target.classList.add("animated");
+          target.classList.remove("before-animate");
+
+          // Add glow effect to cards
+          if (target.classList.contains("stagger-item")) {
+            target.classList.add("glow-on-animate");
+            setTimeout(() => {
+              target.classList.remove("glow-on-animate");
+            }, 3000);
+          }
+
+          setTimeout(() => {
+            target.classList.add("after-animate");
+          }, 1400);
+        } else if (!isIntersecting && intersectionRatio === 0) {
+          target.classList.remove(
+            "animated",
+            "after-animate",
+            "glow-on-animate"
+          );
+          target.classList.add("before-animate");
+        }
+      });
+    }, observerOptions);
+
+    // ============================================
+    // SECTION SEQUENTIAL ANIMATION
+    // ============================================
+
+    function initSectionAnimations() {
+      document
+        .querySelectorAll("section[data-section-animate]")
+        .forEach((section) => {
+          section.classList.add("before-animate");
+        });
+
+      const sectionObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.intersectionRatio > 0.1) {
+              entry.target.classList.add("animated");
+              entry.target.classList.remove("before-animate");
+
+              const children = entry.target.querySelectorAll(
+                ".stagger-item, .section-header, .reveal"
+              );
+              children.forEach((child, index) => {
+                setTimeout(() => {
+                  if (child.classList.contains("stagger-item")) {
+                    const delay = (index % 8) * 100;
+                    if (delay > 0) {
+                      child.classList.add(`delay-${Math.min(delay, 1000)}`);
+                    }
+                  }
+                  child.classList.add("animated");
+
+                  // Create particle effect
+                  const rect = child.getBoundingClientRect();
+                  createParticle(
+                    rect.left + rect.width / 2,
+                    rect.top + rect.height / 2
+                  );
+                }, index * 80);
+              });
+            }
+          });
+        },
+        {
+          root: null,
+          rootMargin: "-10% 0px -10% 0px",
+          threshold: 0.15,
+        }
+      );
+
+      document
+        .querySelectorAll("section[data-section-animate]")
+        .forEach((section) => {
+          sectionObserver.observe(section);
+        });
+    }
+
+    // ============================================
+    // INITIALIZE ALL ANIMATIONS
+    // ============================================
+
+    function initScrollAnimations() {
+      document.querySelectorAll(".fade-in-scale").forEach((el) => {
+        fadeObserver.observe(el);
+      });
+
+      document
+        .querySelectorAll(".slide-in-left, .slide-in-right, .slide-in-bottom")
+        .forEach((el) => {
+          fadeObserver.observe(el);
+        });
+
+      document.querySelectorAll(".scale-in-rotate").forEach((el) => {
+        fadeObserver.observe(el);
+      });
+
+      document.querySelectorAll(".stagger-item").forEach((el, index) => {
+        const delay = (index % 8) * 100;
+        if (delay > 0 && delay <= 1000) {
+          el.classList.add(`delay-${delay}`);
+        }
+        fadeObserver.observe(el);
+      });
+
+      document.querySelectorAll(".section-header").forEach((el) => {
+        fadeObserver.observe(el);
+      });
+
+      document.querySelectorAll(".reveal").forEach((el) => {
+        fadeObserver.observe(el);
+      });
+    }
+
+    // ============================================
+    // NAVIGATION SCROLL EFFECTS
+    // ============================================
+
+    function initNavScrollEffect() {
+      const nav = document.querySelector("nav");
+      if (!nav) return;
+
+      let lastScrollY = window.scrollY;
+      let ticking = false;
+      let navHidden = false;
+
+      function updateNav() {
+        const currentScrollY = window.scrollY;
+        const scrollDelta = currentScrollY - lastScrollY;
+
+        if (currentScrollY > 100) {
+          nav.classList.add("nav-scrolled");
+        } else {
+          nav.classList.remove("nav-scrolled");
+        }
+
+        if (currentScrollY > 200) {
+          if (scrollDelta > 5 && !navHidden) {
+            nav.classList.add("nav-hidden");
+            navHidden = true;
+          } else if (scrollDelta < -5 && navHidden) {
+            nav.classList.remove("nav-hidden");
+            navHidden = false;
+          }
+        }
+
+        lastScrollY = currentScrollY;
+        ticking = false;
+      }
+
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (!ticking) {
+            window.requestAnimationFrame(updateNav);
+            ticking = true;
+          }
+        },
+        { passive: true }
+      );
+    }
+
+    // ============================================
+    // PARALLAX EFFECTS
+    // ============================================
+
+    function initParallax() {
+      const parallaxElements = document.querySelectorAll("[data-parallax]");
+      if (parallaxElements.length === 0) return;
+
+      let ticking = false;
+
+      function updateParallax() {
+        const scrolled = window.pageYOffset;
+
+        parallaxElements.forEach((element) => {
+          const speed = parseFloat(element.dataset.parallax || "0.5");
+          const offset = scrolled * speed;
+
+          if (element.classList.contains("parallax-slow")) {
+            element.style.transform = `translateY(${offset}px)`;
+          } else if (element.classList.contains("parallax-medium")) {
+            element.style.transform = `translateY(${offset * 0.7}px)`;
+          } else if (element.classList.contains("parallax-fast")) {
+            element.style.transform = `translateY(${offset * 0.3}px)`;
+          }
+        });
+
+        ticking = false;
+      }
+
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (!ticking) {
+            window.requestAnimationFrame(updateParallax);
+            ticking = true;
+          }
+        },
+        { passive: true }
+      );
+    }
+
+    // ============================================
+    // SMOOTH SCROLL FOR ANCHOR LINKS
+    // ============================================
+
+    function initSmoothScroll() {
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", function (e) {
+          const href = this.getAttribute("href");
+          if (!href || href === "#") return;
+
+          const target = document.querySelector(href);
+          if (target) {
+            e.preventDefault();
+
+            const navHeight = document.querySelector("nav")?.offsetHeight || 0;
+            const targetPosition =
+              target.getBoundingClientRect().top +
+              window.pageYOffset -
+              navHeight -
+              20;
+
+            window.scrollTo({
+              top: targetPosition,
+              behavior: "smooth",
+            });
+
+            if (history.pushState) {
+              history.pushState(null, null, href);
+            }
+          }
+        });
+      });
+    }
+
+    // ============================================
+    // SCROLL INDICATOR
+    // ============================================
+
+    function initScrollIndicator() {
+      const indicator = document.querySelector(".scroll-indicator");
+      if (!indicator) return;
+
+      function updateIndicator() {
+        const scrolled = window.pageYOffset;
+        const viewportHeight = window.innerHeight;
+
+        if (scrolled < viewportHeight * 0.8) {
+          indicator.classList.remove("scroll-indicator-hidden");
+          indicator.classList.add("scroll-indicator-visible");
+        } else {
+          indicator.classList.remove("scroll-indicator-visible");
+          indicator.classList.add("scroll-indicator-hidden");
+        }
+      }
+
+      window.addEventListener("scroll", updateIndicator, { passive: true });
+      updateIndicator();
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function initialize() {
+      setTimeout(markPageLoaded, 150);
+
+      initScrollAnimations();
+      initSectionAnimations();
+      initNavScrollEffect();
+      initParallax();
+      initSmoothScroll();
+      initScrollIndicator();
+      initCursorGlow();
+      initMagneticHover();
+      initParticleEffects();
+
+      sectionsInitialized = true;
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initialize);
+    } else {
+      initialize();
+    }
+
+    document.addEventListener("astro:page-load", () => {
+      if (!sectionsInitialized) {
+        initialize();
+      } else {
+        initScrollAnimations();
+        initNavScrollEffect();
+        initSmoothScroll();
+        initCursorGlow();
+        initMagneticHover();
+      }
+    });
+  })();
+</script>

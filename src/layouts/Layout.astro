@@ -23,6 +23,7 @@ const fullUrl = url.startsWith("http")
 
 import "../styles/tailwind.css";
 import AudioToggle from "../components/AudioToggle.astro";
+import ScrollAnimations from "../components/ScrollAnimations.astro";
 import { ViewTransitions } from "astro:transitions";
 ---
 
@@ -69,6 +70,7 @@ import { ViewTransitions } from "astro:transitions";
   >
     <slot />
     <AudioToggle />
+    <ScrollAnimations />
   </body>
 </html>
 
@@ -82,7 +84,7 @@ import { ViewTransitions } from "astro:transitions";
       // Create audio element ONCE with persistence
       const audio = document.createElement("audio");
       audio.id = "ambient-audio";
-      audio.src = "/ambience-retro.mp3";
+      audio.src = "/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПАРАДА_ПОБЕДЫ.mp3";
       audio.loop = true;
       audio.style.display = "none";
       audio.setAttribute("data-astro-transition-persist", "audio-player");

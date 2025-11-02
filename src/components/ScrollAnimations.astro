@@ -596,11 +596,11 @@
     // ============================================
 
     function markPageLoaded() {
-      if (!pageLoaded) {
-        document.body.classList.add("page-loaded");
-        document.body.style.overflow = "";
-        pageLoaded = true;
-      }
+      document.body.classList.add("page-loaded");
+      document.body.style.overflow = "";
+      document.body.style.overflowX = "";
+      document.body.style.overflowY = "";
+      pageLoaded = true;
     }
 
     // ============================================
@@ -834,6 +834,43 @@
           const href = this.getAttribute("href");
           if (!href || href === "#") return;
 
+          // Handle anchor links from home page
+          if (href.startsWith("#") && window.location.pathname === "/") {
+            const target = document.querySelector(href);
+            if (target) {
+              e.preventDefault();
+              target.scrollIntoView({ behavior: "smooth", block: "start" });
+              // Update URL without reload
+              history.pushState(null, "", href);
+              return;
+            }
+          }
+
+          // Handle anchor links from other pages (need to go to home first)
+          if (href.startsWith("#") && window.location.pathname !== "/") {
+            e.preventDefault();
+            // Navigate to home page with anchor using View Transitions (no reload)
+            const targetUrl = `/${href}`;
+            // Use browser's native View Transitions API if available
+            if (typeof document.startViewTransition === "function") {
+              document.startViewTransition(() => {
+                // Navigate using Astro's View Transitions
+                const linkEl = document.createElement("a");
+                linkEl.href = targetUrl;
+                linkEl.click();
+              });
+            } else {
+              // Fallback: create a temporary link to trigger Astro's View Transitions
+              const linkEl = document.createElement("a");
+              linkEl.href = targetUrl;
+              linkEl.style.display = "none";
+              document.body.appendChild(linkEl);
+              linkEl.click();
+              document.body.removeChild(linkEl);
+            }
+            return;
+          }
+
           const target = document.querySelector(href);
           if (target) {
             e.preventDefault();
@@ -910,6 +947,21 @@
     }
 
     document.addEventListener("astro:page-load", () => {
+      // Always restore scrolling on page load (after a short delay to ensure DOM is ready)
+      setTimeout(() => {
+        // Check if any modal is open - if not, restore scrolling
+        const openModals = document.querySelectorAll(
+          '[class*="fixed"][class*="inset-0"]:not(.hidden)'
+        );
+        if (openModals.length === 0) {
+          markPageLoaded();
+          // Force restore overflow styles
+          document.body.style.overflow = "";
+          document.body.style.overflowX = "";
+          document.body.style.overflowY = "";
+        }
+      }, 50);
+
       if (!sectionsInitialized) {
         initialize();
       } else {

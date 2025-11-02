@@ -1,11 +1,12 @@
 ---
-import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПАРАДА_ПОБЕДЫ.mp3";
+import ambienceAudio from "../assets/music-for-victory-parade.mp3";
 ---
 
-<!-- Audio Player Container -->
+<!-- Audio Player Container - Always visible, persists across page transitions -->
 <div
   class="fixed left-6 bottom-6 z-[9999] flex flex-col gap-3"
-  transition:persist
+  transition:persist="audio-toggle-control"
+  data-astro-transition-persist="audio-toggle-control"
 >
   <!-- Main Audio Toggle Button -->
   <button
@@ -149,7 +150,12 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
 </div>
 
 <!-- Hidden Audio Element -->
-<audio id="ambient-audio" loop preload="auto">
+<audio
+  id="ambient-audio"
+  loop
+  preload="auto"
+  data-astro-transition-persist="audio-player"
+>
   <source src={ambienceAudio} type="audio/mpeg" />
   Your browser does not support audio.
 </audio>
@@ -213,11 +219,9 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
   const playingIndicator = document.getElementById("playing-indicator");
 
   let isPlaying = false;
-  let audioActivated = false;
   let volumeTimeout: number | null = null;
   const INITIAL_VOLUME = 70;
   const AUDIO_KEY = "baocap_audio_state";
-  const AUDIO_ACTIVATED_KEY = "baocap_audio_activated";
 
   // Wait for audio to be created by Layout.astro
   function initAudioControls() {
@@ -227,10 +231,6 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
     if (!audio) {
       return;
     }
-
-    // Check if audio was previously activated (once activated, cannot be paused)
-    const activated = localStorage.getItem(AUDIO_ACTIVATED_KEY) === "true";
-    audioActivated = activated;
 
     // Restore UI state from localStorage
     const savedState = localStorage.getItem(AUDIO_KEY);
@@ -246,19 +246,34 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
         volumeDisplay.textContent = savedVolume.toString();
       }
 
-      // Check actual audio state (more reliable than saved state)
+      // Restore audio state immediately
+      if (audio) {
+        audio.volume = state.volume || 0.7;
+        // Restore current time immediately if audio is loaded
+        if (
+          state.currentTime &&
+          audio.duration > 0 &&
+          state.currentTime < audio.duration
+        ) {
+          audio.currentTime = state.currentTime;
+        }
+      }
+
+      // Check actual audio state
       isPlaying = !audio.paused;
 
-      // If audio was previously activated, ensure it's playing
-      if (audioActivated && audio.paused) {
-        audio
-          .play()
-          .catch((err) => console.log("Audio auto-resume error:", err));
-        isPlaying = true;
+      // If it was playing but is now paused (after page transition), resume immediately
+      if (state.isPlaying && audio.paused) {
+        // Resume immediately - no delay, no waiting
+        audio.play().catch(() => {
+          // Auto-play might be blocked, but that's okay
+        });
+        // Update state immediately
+        isPlaying = !audio.paused;
       }
 
       // Update UI based on ACTUAL audio state
-      if (isPlaying || audioActivated) {
+      if (isPlaying) {
         volumeOff?.classList.add("hidden");
         volumeOn?.classList.remove("hidden");
         toggleBtn?.classList.add(
@@ -273,12 +288,8 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
         );
         pulseRing?.classList.remove("hidden");
         playingIndicator?.classList.remove("hidden");
-
-        // If activated, disable pause functionality
-        if (audioActivated && toggleBtn) {
-          toggleBtn.title =
-            "Âm thanh đã được bật. Chỉ có thể điều chỉnh âm lượng.";
-          toggleBtn.style.cursor = "default";
+        if (toggleBtn) {
+          toggleBtn.title = "Tắt âm thanh";
         }
       } else {
         volumeOn?.classList.add("hidden");
@@ -293,6 +304,11 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
           "to-yellow-600",
           "border-amber-400"
         );
+        pulseRing?.classList.add("hidden");
+        playingIndicator?.classList.add("hidden");
+        if (toggleBtn) {
+          toggleBtn.title = "Bật âm thanh";
+        }
       }
     } else {
       // Default initialization
@@ -310,27 +326,15 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
         volumeDisplay.textContent = INITIAL_VOLUME.toString();
       }
       isPlaying = false;
-    }
-
-    // Auto-resume if activated and paused (catch any edge cases)
-    if (audioActivated) {
-      setInterval(() => {
-        if (audio.paused) {
-          audio.play().catch((err) => {
-            // Only log if it's not a user interaction issue
-            if (!err.message.includes("user gesture")) {
-              console.log("Audio auto-resume error:", err);
-            }
-          });
-        }
-      }, 1000);
+      if (toggleBtn) {
+        toggleBtn.title = "Bật âm thanh";
+      }
     }
 
     // Sync UI with audio state every 500ms
     setInterval(() => {
       const currentlyPlaying = !audio.paused;
-      if (currentlyPlaying !== isPlaying && !audioActivated) {
-        // Only update UI if audio is not activated (to prevent manual pause)
+      if (currentlyPlaying !== isPlaying) {
         isPlaying = currentlyPlaying;
         if (isPlaying) {
           volumeOff?.classList.add("hidden");
@@ -347,6 +351,9 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
           );
           pulseRing?.classList.remove("hidden");
           playingIndicator?.classList.remove("hidden");
+          if (toggleBtn) {
+            toggleBtn.title = "Tắt âm thanh";
+          }
         } else {
           volumeOn?.classList.add("hidden");
           volumeOff?.classList.remove("hidden");
@@ -362,14 +369,10 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
           );
           pulseRing?.classList.add("hidden");
           playingIndicator?.classList.add("hidden");
-        }
-      } else if (audioActivated && audio.paused) {
-        // If activated but paused, force resume
-        audio.play().catch((err) => {
-          if (!err.message.includes("user gesture")) {
-            console.log("Audio auto-resume error:", err);
+          if (toggleBtn) {
+            toggleBtn.title = "Bật âm thanh";
           }
-        });
+        }
       }
     }, 500);
   }
@@ -379,6 +382,139 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
     document.addEventListener("DOMContentLoaded", initAudioControls);
   } else {
     initAudioControls();
+  }
+
+  // Ensure AudioToggle container is always visible
+  function ensureAudioToggleVisible() {
+    const audioToggleContainer = document.querySelector(
+      '[data-astro-transition-persist="audio-toggle-control"]'
+    ) as HTMLElement;
+    if (audioToggleContainer) {
+      audioToggleContainer.style.display = "flex";
+      audioToggleContainer.style.visibility = "visible";
+      audioToggleContainer.style.opacity = "1";
+    }
+  }
+
+  // Ensure visible on initial load
+  ensureAudioToggleVisible();
+
+  // Also ensure visible after any page transition
+  document.addEventListener("astro:page-load", ensureAudioToggleVisible);
+  document.addEventListener("astro:after-swap", ensureAudioToggleVisible);
+
+  // Re-initialize on View Transitions page load
+  document.addEventListener("astro:page-load", () => {
+    // Re-initialize audio controls immediately (no delay)
+    // Re-initialize controls
+    initAudioControls();
+
+    // Try to restore playing state immediately
+    const audio =
+      window.__baocapAudio__ ||
+      (document.getElementById("ambient-audio") as HTMLAudioElement);
+    if (audio) {
+      const savedState = localStorage.getItem(AUDIO_KEY);
+      if (savedState) {
+        try {
+          const state = JSON.parse(savedState);
+          // Restore volume
+          if (state.volume) {
+            audio.volume = state.volume;
+          }
+          // Restore current time immediately if valid
+          if (
+            state.currentTime &&
+            audio.duration > 0 &&
+            state.currentTime < audio.duration
+          ) {
+            audio.currentTime = state.currentTime;
+          }
+          // Try to resume if it was playing (immediately, no delay, no waiting)
+          if (state.isPlaying) {
+            // Resume immediately - ensure it keeps playing
+            if (audio.paused) {
+              audio.play().catch(() => {
+                // Auto-play might be blocked, but that's okay
+                // User can manually resume by clicking the button
+              });
+            }
+            // Double-check: ensure it's playing
+            if (audio.paused) {
+              audio.play().catch(() => {});
+            }
+            // Update state immediately
+            isPlaying = !audio.paused;
+            // Update UI to reflect actual state immediately
+            if (isPlaying) {
+              updateUI();
+            }
+
+            // Continuous monitoring for this page to ensure it keeps playing
+            const monitorInterval = setInterval(() => {
+              if (audio.paused && state.isPlaying) {
+                audio.play().catch(() => {});
+              }
+              // Stop if user pauses manually (state changed)
+              const currentState = localStorage.getItem(AUDIO_KEY);
+              if (currentState) {
+                try {
+                  const current = JSON.parse(currentState);
+                  if (!current.isPlaying) {
+                    clearInterval(monitorInterval);
+                  }
+                } catch (e) {
+                  clearInterval(monitorInterval);
+                }
+              }
+            }, 100); // Check every 100ms
+          }
+        } catch (e) {
+          console.log("Could not restore audio state:", e);
+        }
+      }
+    }
+  });
+
+  // Helper function to update UI
+  function updateUI() {
+    if (isPlaying) {
+      volumeOff?.classList.add("hidden");
+      volumeOn?.classList.remove("hidden");
+      toggleBtn?.classList.add(
+        "from-amber-500",
+        "to-yellow-600",
+        "border-amber-400"
+      );
+      toggleBtn?.classList.remove(
+        "from-neutral-600",
+        "to-neutral-700",
+        "border-neutral-500"
+      );
+      pulseRing?.classList.remove("hidden");
+      playingIndicator?.classList.remove("hidden");
+      if (toggleBtn) {
+        toggleBtn.title = "Tắt âm thanh";
+      }
+    } else {
+      volumeOn?.classList.add("hidden");
+      volumeOff?.classList.remove("hidden");
+      toggleBtn?.classList.add(
+        "from-neutral-600",
+        "to-neutral-700",
+        "border-neutral-500"
+      );
+      toggleBtn?.classList.remove(
+        "from-amber-500",
+        "to-yellow-600",
+        "border-amber-400"
+      );
+      pulseRing?.classList.add("hidden");
+      playingIndicator?.classList.add("hidden");
+      if (toggleBtn) {
+        toggleBtn.title = "Bật âm thanh";
+      }
+    }
   }
 
   // Function to show volume popup
@@ -405,29 +541,44 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
     if (volumeTimeout) clearTimeout(volumeTimeout);
   }
 
-  // Toggle Play/Pause (once activated, cannot be paused)
-  toggleBtn?.addEventListener("click", () => {
+  // Toggle Play/Pause
+  toggleBtn?.addEventListener("click", (e) => {
     const audio =
       window.__baocapAudio__ ||
       (document.getElementById("ambient-audio") as HTMLAudioElement);
     if (!audio) return;
 
-    // If audio was already activated, only allow volume control
-    if (audioActivated) {
-      if (!volumeControl?.classList.contains("hidden")) {
-        closeVolumePopup();
-      } else {
-        openVolumePopup();
-      }
+    // If clicking on button and volume popup is visible, toggle popup
+    if (
+      !volumeControl?.classList.contains("hidden") &&
+      e.target === toggleBtn
+    ) {
+      closeVolumePopup();
       return;
     }
 
+    // Toggle play/pause
     if (isPlaying) {
-      // First time pause - not allowed after activation
-      // This case should not happen if logic is correct, but handle it anyway
-      return;
+      // Pause audio
+      audio.pause();
+      volumeOn?.classList.add("hidden");
+      volumeOff?.classList.remove("hidden");
+      toggleBtn.classList.remove(
+        "from-amber-500",
+        "to-yellow-600",
+        "border-amber-400"
+      );
+      toggleBtn.classList.add(
+        "from-neutral-600",
+        "to-neutral-700",
+        "border-neutral-500"
+      );
+      pulseRing?.classList.add("hidden");
+      playingIndicator?.classList.add("hidden");
+      isPlaying = false;
+      toggleBtn.title = "Bật âm thanh";
     } else {
-      // Play - FIRST TIME ACTIVATION (permanent)
+      // Play audio
       audio.play().catch((err) => console.log("Audio play error:", err));
       volumeOff?.classList.add("hidden");
       volumeOn?.classList.remove("hidden");
@@ -444,20 +595,11 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
       pulseRing?.classList.remove("hidden");
       playingIndicator?.classList.remove("hidden");
       isPlaying = true;
-      audioActivated = true;
-
-      // Mark as permanently activated
-      localStorage.setItem(AUDIO_ACTIVATED_KEY, "true");
-
-      // Update button to show it's permanent
-      toggleBtn.title = "Âm thanh đã được bật. Chỉ có thể điều chỉnh âm lượng.";
-      toggleBtn.style.cursor = "default";
-
-      openVolumePopup();
-
-      // Save state
-      saveState();
+      toggleBtn.title = "Tắt âm thanh";
     }
+
+    // Save state
+    saveState();
   });
 
   // Save state function
@@ -475,19 +617,24 @@ import ambienceAudio from "../assets/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПА�
     }
   }
 
-  // Click toggle again to focus popup if already playing
+  // Save state periodically
+  setInterval(() => {
+    saveState();
+  }, 3000);
+
+  // Right-click on button to open volume popup
   toggleBtn?.addEventListener("contextmenu", (e) => {
-    // right-click on button to quickly open volume (for accessibility)
     e.preventDefault();
     openVolumePopup();
   });
 
-  // Also show popup if double click (bonus easy access)
+  // Double click to open volume popup
   toggleBtn?.addEventListener("dblclick", (e) => {
+    e.preventDefault();
     openVolumePopup();
   });
 
-  // And open on long press/tap (mobile friendly)
+  // Long press/tap to open volume popup
   let pressTimer: number | null = null;
   toggleBtn?.addEventListener("mousedown", () => {
     pressTimer = window.setTimeout(openVolumePopup, 400);

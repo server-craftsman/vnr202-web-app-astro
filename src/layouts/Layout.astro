@@ -84,8 +84,9 @@ import { ViewTransitions } from "astro:transitions";
       // Create audio element ONCE with persistence
       const audio = document.createElement("audio");
       audio.id = "ambient-audio";
-      audio.src = "/MUSIC_FOR_VICTORY_PARADE_МУЗЫКА_ПАРАДА_ПОБЕДЫ.mp3";
+      audio.src = "/music-for-victory-parade.mp3";
       audio.loop = true;
+      audio.preload = "auto";
       audio.style.display = "none";
       audio.setAttribute("data-astro-transition-persist", "audio-player");
 
@@ -101,6 +102,25 @@ import { ViewTransitions } from "astro:transitions";
       // Store globally to survive navigation
       window.__baocapAudio__ = audio;
 
+      // Prevent audio from being paused during transitions
+      audio.addEventListener(
+        "pause",
+        (e) => {
+          const savedState = localStorage.getItem(AUDIO_KEY);
+          if (savedState) {
+            try {
+              const state = JSON.parse(savedState);
+              // If audio was playing and got paused, resume immediately
+              if (state.isPlaying && audio.paused) {
+                // Resume immediately without delay
+                audio.play().catch(() => {});
+              }
+            } catch (e) {}
+          }
+        },
+        { passive: true }
+      );
+
       // Restore state from localStorage
       const savedState = localStorage.getItem(AUDIO_KEY);
       if (savedState) {
@@ -108,54 +128,34 @@ import { ViewTransitions } from "astro:transitions";
           const state = JSON.parse(savedState);
           audio.volume = state.volume || 0.7;
 
-          if (state.currentTime) {
+          if (state.currentTime && audio.duration > 0) {
             audio.currentTime = state.currentTime;
           }
 
-          // Check if audio was previously activated (permanent)
-          const activated =
-            localStorage.getItem("baocap_audio_activated") === "true";
-
-          if (state.isPlaying || activated) {
-            // Try to auto-play (especially if previously activated)
-            audio.play().catch(() => {
-              // Auto-play might be blocked, but will resume when user interacts
-              if (activated) {
-                // For activated audio, ensure it plays as soon as possible
-                const tryPlay = () => {
-                  audio.play().catch(() => {});
-                  // Remove listener after first try
-                  document.removeEventListener("click", tryPlay);
-                  document.removeEventListener("touchstart", tryPlay);
-                };
-                document.addEventListener("click", tryPlay, { once: true });
-                document.addEventListener("touchstart", tryPlay, {
-                  once: true,
+          // Restore playing state - try to auto-resume if it was playing
+          if (state.isPlaying) {
+            // Play immediately - no delays, no checks
+            const tryResume = () => {
+              if (audio && audio.paused) {
+                audio.play().catch(() => {
+                  // Auto-play blocked, will need user interaction
                 });
-              } else {
-                console.log("Auto-play blocked. Click audio button to play.");
               }
-            });
+              // Double-check: ensure it's playing
+              if (audio && audio.paused) {
+                audio.play().catch(() => {});
+              }
+            };
 
-            // If activated, ensure it stays playing
-            if (activated) {
-              // Listen for pause events and resume immediately
-              audio.addEventListener(
-                "pause",
-                () => {
-                  if (audio.paused) {
-                    audio.play().catch(() => {});
-                  }
-                },
-                { passive: true }
-              );
+            // Try immediately - no conditions
+            tryResume();
 
-              // Periodic check to ensure it's playing
-              setInterval(() => {
-                if (audio.paused && activated) {
-                  audio.play().catch(() => {});
-                }
-              }, 1000);
+            // Also try when audio is ready (if not already)
+            if (audio.readyState < 2) {
+              audio.addEventListener("canplaythrough", tryResume, {
+                once: true,
+              });
+              audio.addEventListener("loadeddata", tryResume, { once: true });
             }
           }
         } catch (e) {
@@ -171,10 +171,8 @@ import { ViewTransitions } from "astro:transitions";
     function saveAudioState() {
       const audio = window.__baocapAudio__;
       if (audio) {
-        const activated =
-          localStorage.getItem("baocap_audio_activated") === "true";
         const state = {
-          isPlaying: !audio.paused || activated, // Always save as playing if activated
+          isPlaying: !audio.paused,
           volume: audio.volume,
           currentTime: audio.currentTime,
         };
@@ -182,48 +180,225 @@ import { ViewTransitions } from "astro:transitions";
       }
     }
 
-    // Save every 5 seconds if playing or activated
+    // Save every 5 seconds if playing
     setInterval(() => {
       const audio = window.__baocapAudio__;
-      const activated =
-        localStorage.getItem("baocap_audio_activated") === "true";
-      if (audio && (!audio.paused || activated)) {
+      if (audio && !audio.paused) {
         saveAudioState();
-
-        // If activated but paused, resume
-        if (activated && audio.paused) {
-          audio.play().catch(() => {});
-        }
       }
     }, 5000);
 
-    // Additional safety: Monitor for pause events if activated
-    if (window.__baocapAudio__) {
+    // Continuous monitoring to ensure audio keeps playing during page transitions
+    setInterval(() => {
       const audio = window.__baocapAudio__;
-      const activated =
-        localStorage.getItem("baocap_audio_activated") === "true";
+      if (!audio) return;
 
-      if (activated) {
-        // Prevent pause if activated
-        audio.addEventListener(
-          "pause",
-          (e) => {
-            if (activated) {
-              // Resume immediately
-              setTimeout(() => {
-                if (audio.paused) {
-                  audio.play().catch(() => {});
-                }
-              }, 50);
-            }
-          },
-          { passive: true }
-        );
+      const savedState = localStorage.getItem(AUDIO_KEY);
+      if (savedState) {
+        try {
+          const state = JSON.parse(savedState);
+          // If audio should be playing but is paused, resume immediately
+          if (state.isPlaying && audio.paused) {
+            // Resume immediately - no delay
+            audio.play().catch(() => {});
+          }
+        } catch (e) {}
       }
-    }
+    }, 100); // Check every 100ms to ensure continuous playback
 
     // Save before unload
     window.addEventListener("beforeunload", saveAudioState);
     window.addEventListener("pagehide", saveAudioState);
+
+    // Handle View Transitions - prevent audio pause and ensure continuous playback
+    document.addEventListener("astro:before-preparation", () => {
+      // Save state right before page transition
+      const audio = window.__baocapAudio__;
+      if (audio && !audio.paused) {
+        saveAudioState();
+        // CRITICAL: Prevent audio from pausing during transition
+        // Add listener to immediately resume if paused
+        const preventPause = () => {
+          if (!audio.paused) {
+            // Audio is still playing - save current state
+            saveAudioState();
+          } else {
+            // Audio was paused - resume immediately
+            const savedState = localStorage.getItem(AUDIO_KEY);
+            if (savedState) {
+              try {
+                const state = JSON.parse(savedState);
+                if (state.isPlaying) {
+                  audio.currentTime = state.currentTime || audio.currentTime;
+                  audio.play().catch(() => {});
+                }
+              } catch (e) {}
+            }
+          }
+        };
+
+        // Listen for pause events and immediately resume
+        audio.addEventListener("pause", preventPause, { passive: true });
+
+        // Also check immediately before transition
+        if (audio.paused) {
+          preventPause();
+        }
+      }
+    });
+
+    document.addEventListener("astro:page-load", () => {
+      const audio = window.__baocapAudio__;
+      if (!audio) return;
+
+      // IMMEDIATELY restore audio - NO DELAY, NO WAITING
+      const savedState = localStorage.getItem(AUDIO_KEY);
+      if (savedState) {
+        try {
+          const state = JSON.parse(savedState);
+
+          // Restore volume immediately
+          audio.volume = state.volume || 0.7;
+
+          // Restore current time immediately if valid
+          if (state.currentTime && audio.duration > 0) {
+            audio.currentTime = state.currentTime;
+          }
+
+          // CRITICAL: If it was playing, resume IMMEDIATELY - NO DELAY, NO CHECKS
+          if (state.isPlaying) {
+            // Play immediately - don't wait for anything
+            audio.play().catch(() => {
+              // Auto-play might be blocked, but try anyway
+            });
+
+            // Double-check: ensure it's playing
+            if (audio.paused) {
+              audio.play().catch(() => {});
+            }
+
+            // Triple-check after microtask
+            Promise.resolve().then(() => {
+              if (audio.paused && state.isPlaying) {
+                audio.play().catch(() => {});
+              }
+            });
+          }
+        } catch (e) {
+          console.log("Could not restore audio on page load:", e);
+        }
+      }
+
+      // Continuous monitoring to ensure audio keeps playing
+      const checkAndResume = () => {
+        const audio = window.__baocapAudio__;
+        if (!audio) return;
+
+        const savedState = localStorage.getItem(AUDIO_KEY);
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            // If audio should be playing but is paused, resume immediately
+            if (state.isPlaying && audio.paused) {
+              // Resume immediately - no delay
+              audio.play().catch(() => {});
+            }
+          } catch (e) {}
+        }
+      };
+
+      // Check immediately - multiple times to ensure it resumes
+      checkAndResume();
+      requestAnimationFrame(checkAndResume);
+      requestAnimationFrame(() => requestAnimationFrame(checkAndResume));
+
+      // Also set up continuous monitoring for this page
+      const monitorInterval = setInterval(() => {
+        checkAndResume();
+        // Stop monitoring if audio is not supposed to be playing
+        const savedState = localStorage.getItem(AUDIO_KEY);
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            if (!state.isPlaying) {
+              clearInterval(monitorInterval);
+            }
+          } catch (e) {
+            clearInterval(monitorInterval);
+          }
+        } else {
+          clearInterval(monitorInterval);
+        }
+      }, 50); // Check every 50ms on page load to catch any immediate pauses
+    });
+  })();
+
+  // Ensure all internal links use View Transitions (no full page reload)
+  (function () {
+    // Intercept all link clicks to ensure View Transitions are used
+    document.addEventListener(
+      "click",
+      function (e) {
+        const target = e.target;
+        const link = target.closest ? target.closest("a[href]") : null;
+
+        if (!link) return;
+
+        const href = link.getAttribute("href");
+        if (!href) return;
+
+        // Skip external links, mailto, tel, and anchor-only links
+        if (
+          href.startsWith("http://") ||
+          href.startsWith("https://") ||
+          href.startsWith("mailto:") ||
+          href.startsWith("tel:") ||
+          href.startsWith("#")
+        ) {
+          // For anchor links, use smooth scroll without page reload
+          if (href.startsWith("#")) {
+            e.preventDefault();
+            const targetId = href.substring(1);
+            const targetElement =
+              document.getElementById(targetId) ||
+              document.querySelector('[id="' + targetId + '"]');
+            if (targetElement) {
+              targetElement.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+              // Update URL without reload
+              history.pushState(null, "", href);
+            }
+          }
+          return;
+        }
+
+        // For internal links, ensure View Transitions are used (no full reload)
+        // Check if link has target="_blank" or other attributes that bypass View Transitions
+        if (
+          link.hasAttribute("target") &&
+          link.getAttribute("target") !== "_self"
+        ) {
+          return; // Skip links that should open in new window
+        }
+
+        // Ensure audio continues playing during transition
+        // Astro automatically handles View Transitions for internal links
+        // We just ensure audio state is saved before navigation
+        const audio = window.__baocapAudio__;
+        if (audio && !audio.paused) {
+          const state = {
+            isPlaying: true,
+            volume: audio.volume,
+            currentTime: audio.currentTime,
+          };
+          localStorage.setItem("baocap_audio_state", JSON.stringify(state));
+        }
+
+        // Let Astro handle View Transitions - don't prevent default for internal links
+      },
+      true
+    ); // Use capture phase to catch links early
   })();
 </script>

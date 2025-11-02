@@ -120,28 +120,93 @@ import { ViewTransitions } from "astro:transitions";
         return originalPause();
       };
 
-      // Also add event listener as backup
-      audio.addEventListener(
-        "pause",
-        (e) => {
-          const savedState = localStorage.getItem(AUDIO_KEY);
-          if (savedState) {
-            try {
-              const state = JSON.parse(savedState);
-              // If audio was playing and got paused, resume IMMEDIATELY - NO DELAY
-              if (state.isPlaying && audio.paused) {
-                // Resume immediately - use setTimeout with 0 delay to ensure it happens
-                setTimeout(() => {
-                  audio.play().catch(() => {});
-                }, 0);
-                // Also try immediately
-                audio.play().catch(() => {});
+      // Override load() to ensure it doesn't pause
+      const originalLoad = audio.load.bind(audio);
+      audio.load = function () {
+        const savedState = localStorage.getItem(AUDIO_KEY);
+        const wasPlaying = savedState
+          ? (() => {
+              try {
+                const state = JSON.parse(savedState);
+                return state.isPlaying;
+              } catch (e) {
+                return false;
               }
-            } catch (e) {}
-          }
-        },
-        { passive: false, capture: true }
-      );
+            })()
+          : false;
+
+        originalLoad.call(this);
+
+        // If it was playing, resume immediately after load
+        if (wasPlaying) {
+          setTimeout(() => {
+            this.play().catch(() => {});
+            this.play().catch(() => {});
+          }, 0);
+        }
+      };
+
+      // AGGRESSIVE: Prevent pause event from EVER firing if audio should be playing
+      const preventPauseHandler = (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        const savedState = localStorage.getItem(AUDIO_KEY);
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            if (state.isPlaying) {
+              // Resume IMMEDIATELY - NO DELAY AT ALL
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+
+              // Also use all async methods to ensure it resumes
+              Promise.resolve().then(() => {
+                if (audio.paused && state.isPlaying) {
+                  audio.play().catch(() => {});
+                  audio.play().catch(() => {});
+                }
+              });
+
+              requestAnimationFrame(() => {
+                if (audio.paused && state.isPlaying) {
+                  audio.play().catch(() => {});
+                  audio.play().catch(() => {});
+                }
+              });
+
+              if (window.requestIdleCallback) {
+                requestIdleCallback(
+                  () => {
+                    if (audio.paused && state.isPlaying) {
+                      audio.play().catch(() => {});
+                      audio.play().catch(() => {});
+                    }
+                  },
+                  { timeout: 0 }
+                );
+              }
+
+              return false;
+            }
+          } catch (e) {}
+        }
+      };
+
+      // Add multiple listeners with different phases and priorities
+      audio.addEventListener("pause", preventPauseHandler, {
+        passive: false,
+        capture: true,
+        once: false,
+      });
+
+      // Also add to the event target phase
+      audio.addEventListener("pause", preventPauseHandler, {
+        passive: false,
+        capture: false,
+        once: false,
+      });
 
       // Restore state from localStorage
       const savedState = localStorage.getItem(AUDIO_KEY);
@@ -232,6 +297,32 @@ import { ViewTransitions } from "astro:transitions";
     window.addEventListener("beforeunload", saveAudioState);
     window.addEventListener("pagehide", saveAudioState);
 
+    // Use MutationObserver to detect if audio element is removed/recreated
+    if (window.__baocapAudio__) {
+      const audio = window.__baocapAudio__;
+      const observer = new MutationObserver((mutations) => {
+        const savedState = localStorage.getItem(AUDIO_KEY);
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            if (state.isPlaying && audio.paused) {
+              // Resume immediately if audio was paused during mutation
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+            }
+          } catch (e) {}
+        }
+      });
+
+      observer.observe(document.body || document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["src", "preload"],
+      });
+    }
+
     // Handle View Transitions - prevent audio pause and ensure continuous playback
     document.addEventListener("astro:before-preparation", () => {
       // Save state right before page transition
@@ -250,32 +341,65 @@ import { ViewTransitions } from "astro:transitions";
                 audio.play().catch(() => {});
               }
 
+              // Play multiple times BEFORE transition starts to ensure it doesn't pause
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+
               // Add aggressive listener to prevent ANY pause during transition
-              const preventPauseDuringTransition = () => {
+              const preventPauseDuringTransition = (e) => {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
                 if (state.isPlaying && audio.paused) {
-                  // Resume immediately - no delay, no checks
+                  // Resume immediately - play multiple times, NO DELAY
                   audio.currentTime = state.currentTime || audio.currentTime;
                   audio.play().catch(() => {});
-                  // Double-check
-                  if (audio.paused) {
-                    audio.play().catch(() => {});
-                  }
+                  audio.play().catch(() => {});
+                  audio.play().catch(() => {});
+
+                  // Use all async methods
+                  Promise.resolve().then(() => {
+                    if (audio.paused && state.isPlaying) {
+                      audio.play().catch(() => {});
+                      audio.play().catch(() => {});
+                    }
+                  });
+
+                  requestAnimationFrame(() => {
+                    if (audio.paused && state.isPlaying) {
+                      audio.play().catch(() => {});
+                      audio.play().catch(() => {});
+                    }
+                  });
+
+                  return false;
                 }
               };
 
-              // Listen in capture phase to catch pause events early
+              // Listen in capture phase to catch pause events early - MULTIPLE LISTENERS
               audio.addEventListener("pause", preventPauseDuringTransition, {
                 passive: false,
                 capture: true,
                 once: false, // Keep listening during entire transition
               });
 
-              // Also monitor continuously during transition
+              // Also in bubble phase
+              audio.addEventListener("pause", preventPauseDuringTransition, {
+                passive: false,
+                capture: false,
+                once: false,
+              });
+
+              // Also monitor continuously during transition - VERY AGGRESSIVE
               const monitorInterval = setInterval(() => {
                 if (state.isPlaying && audio.paused) {
+                  // Play multiple times to ensure it works
+                  audio.play().catch(() => {});
+                  audio.play().catch(() => {});
                   audio.play().catch(() => {});
                 }
-              }, 50); // Check every 50ms during transition
+              }, 5); // Check every 5ms during transition - MAXIMUM RESPONSIVENESS
 
               // Stop monitoring after transition completes
               document.addEventListener(
@@ -286,6 +410,11 @@ import { ViewTransitions } from "astro:transitions";
                     "pause",
                     preventPauseDuringTransition,
                     { capture: true }
+                  );
+                  audio.removeEventListener(
+                    "pause",
+                    preventPauseDuringTransition,
+                    { capture: false }
                   );
                 },
                 { once: true }
@@ -315,6 +444,9 @@ import { ViewTransitions } from "astro:transitions";
           // CRITICAL: If it was playing, resume IMMEDIATELY - ABSOLUTE NO DELAY
           if (state.isPlaying) {
             // Play immediately - NO conditions, NO checks, NO delays
+            // Play multiple times to ensure it works
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
             audio.play().catch(() => {});
             audio.play().catch(() => {});
             audio.play().catch(() => {});
@@ -327,19 +459,66 @@ import { ViewTransitions } from "astro:transitions";
             ) {
               audio.currentTime = state.currentTime;
             }
+
+            // Use ALL async methods to ensure it resumes
+            Promise.resolve().then(() => {
+              if (audio.paused && state.isPlaying) {
+                audio.play().catch(() => {});
+                audio.play().catch(() => {});
+              }
+            });
+
+            setTimeout(() => {
+              if (audio.paused && state.isPlaying) {
+                audio.play().catch(() => {});
+                audio.play().catch(() => {});
+              }
+            }, 0);
+
+            requestAnimationFrame(() => {
+              if (audio.paused && state.isPlaying) {
+                audio.play().catch(() => {});
+                audio.play().catch(() => {});
+              }
+            });
+
+            if (window.requestIdleCallback) {
+              requestIdleCallback(
+                () => {
+                  if (audio.paused && state.isPlaying) {
+                    audio.play().catch(() => {});
+                    audio.play().catch(() => {});
+                  }
+                },
+                { timeout: 0 }
+              );
+            }
           }
         } catch (e) {}
       }
     }
 
-    // Call IMMEDIATELY when DOM is ready (before View Transitions)
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", immediateAudioResume, {
-        once: true,
-      });
-    } else {
+    // Call IMMEDIATELY in ALL possible ways (before View Transitions)
+
+    // 1. Immediately if DOM already ready
+    if (document.readyState !== "loading") {
       immediateAudioResume();
     }
+
+    // 2. On DOMContentLoaded (before any other scripts)
+    document.addEventListener("DOMContentLoaded", immediateAudioResume, {
+      once: true,
+      capture: true,
+    });
+
+    // 3. On window load
+    window.addEventListener("load", immediateAudioResume, {
+      once: true,
+      capture: true,
+    });
+
+    // 4. Immediately in current execution context
+    immediateAudioResume();
 
     // Also call on astro:page-load for redundancy
     document.addEventListener("astro:page-load", () => {

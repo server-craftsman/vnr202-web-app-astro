@@ -9,7 +9,7 @@ export interface BaoCapReason {
 
 export const baoCapReasons: BaoCapReason[] = [
     {
-        id: 'unification',
+        id: 'thong-nhat-dat-nuoc-sau-chien-tranh',
         title: 'Thống nhất đất nước sau chiến tranh',
         description: 'Cần một mô hình kinh tế thống nhất cho toàn quốc sau khi hai miền có hệ thống kinh tế khác nhau',
         details: [
@@ -22,7 +22,7 @@ export const baoCapReasons: BaoCapReason[] = [
         priority: 1
     },
     {
-        id: 'ideology',
+        id: 'he-tu-tuong-xa-hoi-chua-nghia',
         title: 'Hệ tư tưởng xã hội chủ nghĩa',
         description: 'Theo lý thuyết Marx-Lenin, kinh tế kế hoạch hóa tập trung là biểu hiện của chế độ xã hội chủ nghĩa',
         details: [
@@ -35,7 +35,7 @@ export const baoCapReasons: BaoCapReason[] = [
         priority: 2
     },
     {
-        id: 'resources',
+        id: 'tai-nguyen-va-cong-nghe-han-che',
         title: 'Tài nguyên và công nghệ hạn chế',
         description: 'Đất nước nghèo nàn, tài nguyên ít, thiếu vốn và công nghệ cần thiết để phát triển',
         details: [
@@ -48,7 +48,7 @@ export const baoCapReasons: BaoCapReason[] = [
         priority: 3
     },
     {
-        id: 'aid',
+        id: 'nhan-vien-tro-tu-cac-nuoc-xa-hoi-chua-nghia',
         title: 'Nhận viện trợ từ các nước xã hội chủ nghĩa',
         description: 'Phụ thuộc vào viện trợ từ Liên Xô, Trung Quốc và các nước anh em khác',
         details: [
@@ -61,7 +61,7 @@ export const baoCapReasons: BaoCapReason[] = [
         priority: 4
     },
     {
-        id: 'control',
+        id: 'kiem-soat-xa-hoi-sau-chien-tranh',
         title: 'Kiểm soát xã hội sau chiến tranh',
         description: 'Cần một cơ chế quản lý chặt chẽ để ổn định xã hội, phân phối tài nguyên công bằng',
         details: [
@@ -74,7 +74,7 @@ export const baoCapReasons: BaoCapReason[] = [
         priority: 5
     },
     {
-        id: 'model',
+        id: 'mo-hinh-phat-trien-cua-lien-xo',
         title: 'Mô hình phát triển của Liên Xô',
         description: 'Liên Xô là hình mẫu về phát triển kinh tế xã hội chủ nghĩa thành công',
         details: [
@@ -87,7 +87,7 @@ export const baoCapReasons: BaoCapReason[] = [
         priority: 6
     },
     {
-        id: 'international-isolation',
+        id: 'bi-co-lap-quoc-te',
         title: 'Bị cô lập quốc tế',
         description: 'Việt Nam bị cô lập về ngoại giao và kinh tế sau chiến tranh',
         details: [
@@ -100,7 +100,7 @@ export const baoCapReasons: BaoCapReason[] = [
         priority: 7
     },
     {
-        id: 'war-destruction',
+        id: 'hau-qua-cua-chien-tranh-keo-dai',
         title: 'Hậu quả của chiến tranh kéo dài',
         description: 'Chiến tranh 30 năm tàn phá hạ tầng và nền kinh tế',
         details: [
@@ -113,7 +113,7 @@ export const baoCapReasons: BaoCapReason[] = [
         priority: 8
     },
     {
-        id: 'social-equality',
+        id: 'dam-bao-cong-bang-xa-hoi',
         title: 'Đảm bảo công bằng xã hội',
         description: 'Cơ chế bao cấp đảm bảo mọi người đều có quyền tiếp cận hàng hóa cơ bản',
         details: [

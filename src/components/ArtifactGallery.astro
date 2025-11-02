@@ -3,7 +3,7 @@ import { artifacts } from "../data/artifacts";
 import Icon from "./Icons.astro";
 ---
 
-<section class="relative py-24 md:py-32 bg-gradient-to-b from-stone-900 via-neutral-900 to-stone-950" id="gallery">
+<section class="relative py-24 md:py-32 bg-gradient-to-b from-stone-900 via-neutral-900 to-stone-950" id="hien-vat">
   <div class="container mx-auto px-6 max-w-7xl">
     <!-- Section Header -->
     <div class="text-center mb-16">
@@ -90,7 +90,7 @@ import Icon from "./Icons.astro";
     <!-- Gallery Grid -->
     <div id="gallery-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {artifacts.map((artifact) => (
-        <a href={`/artifacts/${artifact.id}`} class="gallery-item group block" data-category={artifact.category} data-year={artifact.year} data-title={artifact.title} data-sort-default={artifacts.indexOf(artifact)}>
+        <a href={`/hien-vat/${artifact.id}`} class="gallery-item group block" data-category={artifact.category} data-year={artifact.year} data-title={artifact.title} data-sort-default={artifacts.indexOf(artifact)}>
           <div class="relative bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/20 rounded-2xl overflow-hidden hover:border-amber-500/50 hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500 h-full">
             <!-- Image -->
             <div class="relative aspect-square bg-gradient-to-br from-amber-900/20 to-yellow-900/10 overflow-hidden">

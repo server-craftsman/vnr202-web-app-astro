@@ -8,6 +8,7 @@
 
   <div class="hero-content">
     <div class="hero-badge">
+      <!-- <span class="badge-text">📄 TEM PHIẾU • 🏪 MẬU DỊCH • 👥 XẾP HÀNG</span> -->
       <span class="badge-text">BẢO TÀNG SỐ</span>
     </div>
 
@@ -17,9 +18,32 @@
     </h1>
 
     <p class="hero-description">
-      Khám phá câu chuyện lịch sử về giai đoạn kinh tế kế hoạch hóa tập trung
-      của Việt Nam sau giải phóng miền Nam
+      Trải nghiệm lại giai đoạn lịch sử đặc biệt: <strong class="highlight-text"
+        >Tem phiếu, xếp hàng, định mức</strong
+      > - Cuộc sống hàng ngày của người dân Việt Nam trong thời kỳ kinh tế kế hoạch
+      hóa tập trung
     </p>
+
+    <!-- Iconic Elements Floating -->
+    <div class="hero-icons">
+      <div class="floating-icon tem-icon">
+        <span>📄</span>
+
+        <span>Tem Phiếu</span>
+      </div>
+      <div class="floating-icon goods-icon">
+        <span>🍚</span>
+        <span>Lương thực</span>
+      </div>
+      <div class="floating-icon queue-icon">
+        <span>👥</span>
+        <span>Xếp hàng</span>
+      </div>
+      <div class="floating-icon store-icon">
+        <span>🏪</span>
+        <span>Mậu dịch</span>
+      </div>
+    </div>
 
     <div class="hero-actions">
       <a href="#timeline" class="btn btn-primary">
@@ -69,20 +93,27 @@
     position: absolute;
     inset: 0;
     background: radial-gradient(
-        circle at 20% 50%,
-        rgba(138, 43, 226, 0.15) 0%,
-        transparent 50%
+        circle at 15% 30%,
+        rgba(251, 191, 36, 0.2) 0%,
+        transparent 40%
       ),
       radial-gradient(
-        circle at 80% 80%,
-        rgba(255, 140, 0, 0.15) 0%,
-        transparent 50%
+        circle at 85% 70%,
+        rgba(212, 175, 55, 0.15) 0,
+        transparent 40%
       ),
       linear-gradient(
         180deg,
-        rgba(10, 10, 10, 0.85) 0%,
-        rgba(26, 26, 26, 0.75) 50%,
-        rgba(15, 15, 15, 0.85) 100%
+        rgba(10, 10, 10, 0.9) 0%,
+        rgba(26, 26, 26, 0.8) 50%,
+        rgba(15, 15, 15, 0.9) 100%
+      ),
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        rgba(212, 175, 55, 0.02) 2px,
+        rgba(212, 175, 55, 0.02) 4px
       );
     pointer-events: none;
   }
@@ -90,8 +121,13 @@
   .hero-overlay {
     position: absolute;
     inset: 0;
-    background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
-    opacity: 0.6;
+    background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(212,175,55,0.05)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>'),
+      radial-gradient(
+        circle at 50% 50%,
+        transparent 0%,
+        rgba(212, 175, 55, 0.05) 100%
+      );
+    opacity: 0.8;
     pointer-events: none;
   }
 
@@ -132,20 +168,44 @@
 
   .badge-text {
     display: inline-block;
-    padding: 0.5rem 1.5rem;
+    padding: 0.75rem 2rem;
     background: linear-gradient(
       135deg,
-      rgba(212, 175, 55, 0.2) 0%,
-      rgba(244, 191, 55, 0.2) 100%
+      rgba(212, 175, 55, 0.25) 0%,
+      rgba(244, 191, 55, 0.25) 100%
     );
-    border: 1px solid rgba(212, 175, 55, 0.5);
+    border: 2px solid rgba(212, 175, 55, 0.6);
     border-radius: 50px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.15em;
-    color: #d4af37;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #fbbf24;
     backdrop-filter: blur(10px);
     text-transform: uppercase;
+    box-shadow:
+      0 0 20px rgba(212, 175, 55, 0.3),
+      inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    animation: badgeGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes badgeGlow {
+    0%,
+    100% {
+      box-shadow:
+        0 0 20px rgba(212, 175, 55, 0.3),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    }
+    50% {
+      box-shadow:
+        0 0 30px rgba(212, 175, 55, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.2);
+    }
+  }
+
+  .highlight-text {
+    color: #fbbf24;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
   }
 
   .hero-title {
@@ -193,11 +253,12 @@
 
   .hero-description {
     font-size: clamp(1rem, 2vw, 1.25rem);
-    color: rgba(255, 255, 255, 0.7);
-    max-width: 700px;
+    color: rgba(255, 255, 255, 0.85);
+    max-width: 800px;
     margin: 0 auto 3rem;
-    line-height: 1.8;
+    line-height: 2;
     animation: fadeInUp 1s ease-out 0.8s backwards;
+    font-weight: 400;
   }
 
   .hero-actions {
@@ -317,6 +378,86 @@
     letter-spacing: 0.1em;
   }
 
+  .hero-icons {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .floating-icon {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.4;
+    animation: floatIcon 15s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .floating-icon span:first-child {
+    font-size: 3rem;
+    filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));
+  }
+
+  .floating-icon span:last-child {
+    font-size: 0.75rem;
+    color: rgba(212, 175, 55, 0.8);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+  }
+
+  .tem-icon {
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+  }
+
+  .goods-icon {
+    top: 60%;
+    right: 15%;
+    animation-delay: 3s;
+  }
+
+  .queue-icon {
+    bottom: 25%;
+    left: 15%;
+    animation-delay: 6s;
+  }
+
+  .store-icon {
+    top: 30%;
+    right: 10%;
+    animation-delay: 9s;
+  }
+
+  @keyframes floatIcon {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1) rotate(0deg);
+      opacity: 0.3;
+    }
+    25% {
+      transform: translate(20px, -30px) scale(1.1) rotate(5deg);
+      opacity: 0.5;
+    }
+    50% {
+      transform: translate(-15px, -50px) scale(1.15) rotate(-5deg);
+      opacity: 0.6;
+    }
+    75% {
+      transform: translate(-25px, -20px) scale(0.95) rotate(3deg);
+      opacity: 0.4;
+    }
+  }
+
   .hero-decoration {
     position: absolute;
     inset: 0;
@@ -398,23 +539,61 @@
       width: 100%;
       justify-content: center;
     }
+
+    .hero-icons {
+      display: none;
+    }
+
+    .badge-text {
+      font-size: 0.7rem;
+      padding: 0.5rem 1.25rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .hero-description {
+      font-size: 0.9rem;
+    }
+
+    .badge-text {
+      font-size: 0.65rem;
+      padding: 0.5rem 1rem;
+    }
   }
 </style>
 
 <script>
-  // Particle animation
   document.addEventListener("DOMContentLoaded", () => {
-    const canvas = document.getElementById("particles-canvas");
-    if (!canvas) return;
+    const canvasEl = document.getElementById("particles-canvas");
+    if (!canvasEl || !(canvasEl instanceof HTMLCanvasElement)) return;
 
+    const canvas = canvasEl as HTMLCanvasElement;
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const particles = [];
+    const particles: Array<{
+      x: number;
+      y: number;
+      size: number;
+      speedX: number;
+      speedY: number;
+      opacity: number;
+      update: () => void;
+      draw: () => void;
+    }> = [];
     const particleCount = 50;
 
     class Particle {
+      x: number;
+      y: number;
+      size: number;
+      speedX: number;
+      speedY: number;
+      opacity: number;
+
       constructor() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
@@ -435,10 +614,29 @@
       }
 
       draw() {
-        ctx.fillStyle = `rgba(212, 175, 55, ${this.opacity})`;
+        if (!ctx) return;
+
+        const gradient = ctx.createRadialGradient(
+          this.x,
+          this.y,
+          0,
+          this.x,
+          this.y,
+          this.size * 2
+        );
+        gradient.addColorStop(0, `rgba(251, 191, 36, ${this.opacity})`);
+        gradient.addColorStop(0.5, `rgba(212, 175, 55, ${this.opacity * 0.7})`);
+        gradient.addColorStop(1, `rgba(212, 175, 55, 0)`);
+
+        ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
+
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = `rgba(251, 191, 36, ${this.opacity})`;
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
     }
 
@@ -447,25 +645,38 @@
     }
 
     function animate() {
+      if (!ctx) return;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach((particle, i) => {
         particle.update();
         particle.draw();
 
-        // Connect nearby particles
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particle.x - particles[j].x;
           const dy = particle.y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 100) {
-            ctx.strokeStyle = `rgba(212, 175, 55, ${0.2 * (1 - distance / 100)})`;
-            ctx.lineWidth = 1;
+          if (distance < 120 && ctx) {
+            const opacity = 0.25 * (1 - distance / 120);
+            const gradient = ctx.createLinearGradient(
+              particle.x,
+              particle.y,
+              particles[j].x,
+              particles[j].y
+            );
+            gradient.addColorStop(0, `rgba(251, 191, 36, ${opacity})`);
+            gradient.addColorStop(1, `rgba(212, 175, 55, ${opacity})`);
+
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 5]);
             ctx.beginPath();
             ctx.moveTo(particle.x, particle.y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.stroke();
+            ctx.setLineDash([]);
           }
         }
       });

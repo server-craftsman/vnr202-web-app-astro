@@ -5,7 +5,7 @@ import Icon from "./Icons.astro";
 import ImageZoom from "./ImageZoom.astro";
 ---
 
-<section class="relative py-24 md:py-32 bg-gradient-to-b from-stone-900 via-neutral-900 to-stone-950" id="timeline">
+<section class="relative py-24 md:py-32 bg-gradient-to-b from-stone-900 via-neutral-900 to-stone-950" id="dong-thoi-gian">
   <div class="container mx-auto px-6 max-w-7xl">
     <!-- Section Header -->
     <div class="text-center mb-20 animate-fade-in">
@@ -31,7 +31,7 @@ import ImageZoom from "./ImageZoom.astro";
 
             <!-- Content Card -->
             <div class="flex-1 md:w-1/2">
-              <a href={`/timeline/${event.year}-${slugify(event.title)}`} class="block">
+              <a href={`/dong-thoi-gian/${event.year}-${slugify(event.title)}`} class="block">
                 <div class={`relative bg-gradient-to-br from-stone-800/50 to-stone-900/50 backdrop-blur-xl border border-amber-500/20 rounded-3xl overflow-hidden shadow-2xl hover:shadow-amber-500/20 hover:border-amber-500/40 hover:-translate-y-2 transition-all duration-500 group/card ${index % 2 === 0 ? 'md:text-right md:mr-8' : 'md:ml-8'}`}>
                   
                   <!-- Event Image -->

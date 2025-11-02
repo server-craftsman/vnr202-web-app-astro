@@ -213,9 +213,11 @@ import ambienceAudio from "../assets/ambience-retro.mp3";
   const playingIndicator = document.getElementById("playing-indicator");
 
   let isPlaying = false;
+  let audioActivated = false;
   let volumeTimeout: number | null = null;
   const INITIAL_VOLUME = 70;
   const AUDIO_KEY = "baocap_audio_state";
+  const AUDIO_ACTIVATED_KEY = "baocap_audio_activated";
 
   // Wait for audio to be created by Layout.astro
   function initAudioControls() {
@@ -225,6 +227,10 @@ import ambienceAudio from "../assets/ambience-retro.mp3";
     if (!audio) {
       return;
     }
+
+    // Check if audio was previously activated (once activated, cannot be paused)
+    const activated = localStorage.getItem(AUDIO_ACTIVATED_KEY) === "true";
+    audioActivated = activated;
 
     // Restore UI state from localStorage
     const savedState = localStorage.getItem(AUDIO_KEY);
@@ -243,8 +249,16 @@ import ambienceAudio from "../assets/ambience-retro.mp3";
       // Check actual audio state (more reliable than saved state)
       isPlaying = !audio.paused;
 
+      // If audio was previously activated, ensure it's playing
+      if (audioActivated && audio.paused) {
+        audio
+          .play()
+          .catch((err) => console.log("Audio auto-resume error:", err));
+        isPlaying = true;
+      }
+
       // Update UI based on ACTUAL audio state
-      if (isPlaying) {
+      if (isPlaying || audioActivated) {
         volumeOff?.classList.add("hidden");
         volumeOn?.classList.remove("hidden");
         toggleBtn?.classList.add(
@@ -259,6 +273,13 @@ import ambienceAudio from "../assets/ambience-retro.mp3";
         );
         pulseRing?.classList.remove("hidden");
         playingIndicator?.classList.remove("hidden");
+
+        // If activated, disable pause functionality
+        if (audioActivated && toggleBtn) {
+          toggleBtn.title =
+            "Âm thanh đã được bật. Chỉ có thể điều chỉnh âm lượng.";
+          toggleBtn.style.cursor = "default";
+        }
       } else {
         volumeOn?.classList.add("hidden");
         volumeOff?.classList.remove("hidden");
@@ -291,10 +312,25 @@ import ambienceAudio from "../assets/ambience-retro.mp3";
       isPlaying = false;
     }
 
+    // Auto-resume if activated and paused (catch any edge cases)
+    if (audioActivated) {
+      setInterval(() => {
+        if (audio.paused) {
+          audio.play().catch((err) => {
+            // Only log if it's not a user interaction issue
+            if (!err.message.includes("user gesture")) {
+              console.log("Audio auto-resume error:", err);
+            }
+          });
+        }
+      }, 1000);
+    }
+
     // Sync UI with audio state every 500ms
     setInterval(() => {
       const currentlyPlaying = !audio.paused;
-      if (currentlyPlaying !== isPlaying) {
+      if (currentlyPlaying !== isPlaying && !audioActivated) {
+        // Only update UI if audio is not activated (to prevent manual pause)
         isPlaying = currentlyPlaying;
         if (isPlaying) {
           volumeOff?.classList.add("hidden");
@@ -327,6 +363,13 @@ import ambienceAudio from "../assets/ambience-retro.mp3";
           pulseRing?.classList.add("hidden");
           playingIndicator?.classList.add("hidden");
         }
+      } else if (audioActivated && audio.paused) {
+        // If activated but paused, force resume
+        audio.play().catch((err) => {
+          if (!err.message.includes("user gesture")) {
+            console.log("Audio auto-resume error:", err);
+          }
+        });
       }
     }, 500);
   }
@@ -362,37 +405,29 @@ import ambienceAudio from "../assets/ambience-retro.mp3";
     if (volumeTimeout) clearTimeout(volumeTimeout);
   }
 
-  // Toggle Play/Pause
+  // Toggle Play/Pause (once activated, cannot be paused)
   toggleBtn?.addEventListener("click", () => {
     const audio =
       window.__baocapAudio__ ||
       (document.getElementById("ambient-audio") as HTMLAudioElement);
     if (!audio) return;
 
-    if (isPlaying) {
-      // Pause
-      audio.pause();
-      volumeOn?.classList.add("hidden");
-      volumeOff?.classList.remove("hidden");
-      toggleBtn.classList.remove(
-        "from-amber-500",
-        "to-yellow-600",
-        "border-amber-400"
-      );
-      toggleBtn.classList.add(
-        "from-neutral-600",
-        "to-neutral-700",
-        "border-neutral-500"
-      );
-      pulseRing?.classList.add("hidden");
-      playingIndicator?.classList.add("hidden");
-      isPlaying = false;
-      closeVolumePopup();
+    // If audio was already activated, only allow volume control
+    if (audioActivated) {
+      if (!volumeControl?.classList.contains("hidden")) {
+        closeVolumePopup();
+      } else {
+        openVolumePopup();
+      }
+      return;
+    }
 
-      // Save state
-      saveState();
+    if (isPlaying) {
+      // First time pause - not allowed after activation
+      // This case should not happen if logic is correct, but handle it anyway
+      return;
     } else {
-      // Play
+      // Play - FIRST TIME ACTIVATION (permanent)
       audio.play().catch((err) => console.log("Audio play error:", err));
       volumeOff?.classList.add("hidden");
       volumeOn?.classList.remove("hidden");
@@ -409,6 +444,15 @@ import ambienceAudio from "../assets/ambience-retro.mp3";
       pulseRing?.classList.remove("hidden");
       playingIndicator?.classList.remove("hidden");
       isPlaying = true;
+      audioActivated = true;
+
+      // Mark as permanently activated
+      localStorage.setItem(AUDIO_ACTIVATED_KEY, "true");
+
+      // Update button to show it's permanent
+      toggleBtn.title = "Âm thanh đã được bật. Chỉ có thể điều chỉnh âm lượng.";
+      toggleBtn.style.cursor = "default";
+
       openVolumePopup();
 
       // Save state

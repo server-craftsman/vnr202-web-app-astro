@@ -27,7 +27,7 @@ const relatedReasons = baoCapReasons
     <div class="max-w-5xl mx-auto">
       <!-- Back Button -->
       <a
-        href="/#reasons"
+        href="/#ly-do"
         class="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-semibold mb-12 transition-colors group"
       >
         <Icon
@@ -150,7 +150,7 @@ const relatedReasons = baoCapReasons
             </h2>
             <div class="grid sm:grid-cols-3 gap-6">
               {relatedReasons.map((related) => (
-                <a href={`/reasons/${related.id}`} class="group block">
+                <a href={`/ly-do/${related.id}`} class="group block">
                   <div class="bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-8 text-center hover:border-amber-500/50 hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500">
                     <div class="text-6xl mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform">
                       {related.icon}

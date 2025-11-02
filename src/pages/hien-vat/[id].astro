@@ -1,5 +1,5 @@
 ---
-import { artifacts } from "../../data/artifacts";
+import { artifacts, getCategoryDisplayName } from "../../data/artifacts";
 import Layout from "../../layouts/Layout.astro";
 import Icon from "../../components/Icons.astro";
 
@@ -32,7 +32,7 @@ const relatedArtifacts = artifacts
       <!-- Breadcrumb & Back -->
       <div class="flex items-center gap-4 mb-12">
         <a
-          href="/#gallery"
+          href="/#hien-vat"
           class="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-semibold transition-colors group"
         >
           <Icon
@@ -42,7 +42,9 @@ const relatedArtifacts = artifacts
           Trở về Bộ sưu tập
         </a>
         <span class="text-neutral-600">/</span>
-        <span class="text-neutral-400">{artifact.category}</span>
+        <span class="text-neutral-400"
+          >{getCategoryDisplayName(artifact.category)}</span
+        >
       </div>
 
       <!-- Main Artifact Card -->
@@ -93,9 +95,8 @@ const relatedArtifacts = artifacts
                 <div class="flex items-center gap-2 text-neutral-400">
                   <Icon name="cube" class="w-4 h-4" />
                   <span
-                    >Danh mục: <span
-                      class="text-amber-300 font-semibold capitalize"
-                      >{artifact.category}</span
+                    >Danh mục: <span class="text-amber-300 font-semibold"
+                      >{getCategoryDisplayName(artifact.category)}</span
                     ></span
                   >
                 </div>
@@ -279,7 +280,7 @@ const relatedArtifacts = artifacts
             </h2>
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedArtifacts.map((related) => (
-                <a href={`/artifacts/${related.id}`} class="group block">
+                <a href={`/hien-vat/${related.id}`} class="group block">
                   <div class="bg-gradient-to-br from-stone-800/40 to-stone-900/40 backdrop-blur-xl border border-amber-500/20 rounded-2xl overflow-hidden hover:border-amber-500/50 hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500">
                     <div class="relative aspect-square bg-gradient-to-br from-amber-900/20 to-yellow-900/10">
                       {related.image ? (

@@ -9,7 +9,7 @@ interface Props {
 const {
   title = "Bảo Tàng Thời Bao Cấp",
   description = "Trải nghiệm tương tác về thời kỳ kinh tế bao cấp Việt Nam 1975-1986. Khám phá lịch sử, hiện vật và câu chuyện về giai đoạn 1975-1986",
-  image = "/assets/bg1.jpg",
+  image = "/assets/bg2.jpg",
   url = Astro.url.href,
 } = Astro.props;
 
@@ -31,7 +31,7 @@ import { ViewTransitions } from "astro:transitions";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/icon.png" />
     <meta name="generator" content={Astro.generator} />
 
     <title>{title}</title>
@@ -110,11 +110,51 @@ import { ViewTransitions } from "astro:transitions";
             audio.currentTime = state.currentTime;
           }
 
-          if (state.isPlaying) {
-            // Try to auto-play
+          // Check if audio was previously activated (permanent)
+          const activated =
+            localStorage.getItem("baocap_audio_activated") === "true";
+
+          if (state.isPlaying || activated) {
+            // Try to auto-play (especially if previously activated)
             audio.play().catch(() => {
-              console.log("Auto-play blocked. Click audio button to play.");
+              // Auto-play might be blocked, but will resume when user interacts
+              if (activated) {
+                // For activated audio, ensure it plays as soon as possible
+                const tryPlay = () => {
+                  audio.play().catch(() => {});
+                  // Remove listener after first try
+                  document.removeEventListener("click", tryPlay);
+                  document.removeEventListener("touchstart", tryPlay);
+                };
+                document.addEventListener("click", tryPlay, { once: true });
+                document.addEventListener("touchstart", tryPlay, {
+                  once: true,
+                });
+              } else {
+                console.log("Auto-play blocked. Click audio button to play.");
+              }
             });
+
+            // If activated, ensure it stays playing
+            if (activated) {
+              // Listen for pause events and resume immediately
+              audio.addEventListener(
+                "pause",
+                () => {
+                  if (audio.paused) {
+                    audio.play().catch(() => {});
+                  }
+                },
+                { passive: true }
+              );
+
+              // Periodic check to ensure it's playing
+              setInterval(() => {
+                if (audio.paused && activated) {
+                  audio.play().catch(() => {});
+                }
+              }, 1000);
+            }
           }
         } catch (e) {
           console.log("Could not restore audio state:", e);
@@ -129,8 +169,10 @@ import { ViewTransitions } from "astro:transitions";
     function saveAudioState() {
       const audio = window.__baocapAudio__;
       if (audio) {
+        const activated =
+          localStorage.getItem("baocap_audio_activated") === "true";
         const state = {
-          isPlaying: !audio.paused,
+          isPlaying: !audio.paused || activated, // Always save as playing if activated
           volume: audio.volume,
           currentTime: audio.currentTime,
         };
@@ -138,13 +180,45 @@ import { ViewTransitions } from "astro:transitions";
       }
     }
 
-    // Save every 5 seconds if playing
+    // Save every 5 seconds if playing or activated
     setInterval(() => {
       const audio = window.__baocapAudio__;
-      if (audio && !audio.paused) {
+      const activated =
+        localStorage.getItem("baocap_audio_activated") === "true";
+      if (audio && (!audio.paused || activated)) {
         saveAudioState();
+
+        // If activated but paused, resume
+        if (activated && audio.paused) {
+          audio.play().catch(() => {});
+        }
       }
     }, 5000);
+
+    // Additional safety: Monitor for pause events if activated
+    if (window.__baocapAudio__) {
+      const audio = window.__baocapAudio__;
+      const activated =
+        localStorage.getItem("baocap_audio_activated") === "true";
+
+      if (activated) {
+        // Prevent pause if activated
+        audio.addEventListener(
+          "pause",
+          (e) => {
+            if (activated) {
+              // Resume immediately
+              setTimeout(() => {
+                if (audio.paused) {
+                  audio.play().catch(() => {});
+                }
+              }, 50);
+            }
+          },
+          { passive: true }
+        );
+      }
+    }
 
     // Save before unload
     window.addEventListener("beforeunload", saveAudioState);

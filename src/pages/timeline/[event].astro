@@ -1,28 +1,39 @@
 ---
+import type { TimelineEvent } from '../../data/timeline';
 import { timelineData } from '../../data/timeline';
 import { slugify } from '../../utils/slugify';
 import Layout from '../../layouts/Layout.astro';
 import Icon from '../../components/Icons.astro';
+import ImageZoom from '../../components/ImageZoom.astro';
 
 export async function getStaticPaths() {
-  return timelineData.map(event => ({
+  return timelineData.map((event: TimelineEvent) => ({
     params: { event: `${event.year}-${slugify(event.title)}` },
   }));
 }
 
 const { event } = Astro.params;
-const eventData = timelineData.find(e =>
-  `${e.year}-${slugify(e.title)}` === event
-);
+
+if (!event || typeof event !== 'string') {
+  return Astro.redirect('/404');
+}
+
+const eventData: TimelineEvent | undefined = timelineData.find((e: TimelineEvent) => {
+  const eventSlug = `${e.year}-${slugify(e.title)}`;
+  return eventSlug === event;
+});
 
 if (!eventData) {
   return Astro.redirect('/404');
 }
 
-// Get prev/next events
-const currentIndex = timelineData.findIndex(e => `${e.year}-${slugify(e.title)}` === event);
-const prevEvent = currentIndex > 0 ? timelineData[currentIndex - 1] : null;
-const nextEvent = currentIndex < timelineData.length - 1 ? timelineData[currentIndex + 1] : null;
+const currentIndex = timelineData.findIndex((e: TimelineEvent) => {
+  const eventSlug = `${e.year}-${slugify(e.title)}`;
+  return eventSlug === event;
+});
+
+const prevEvent: TimelineEvent | null = currentIndex > 0 ? timelineData[currentIndex - 1] : null;
+const nextEvent: TimelineEvent | null = currentIndex < timelineData.length - 1 ? timelineData[currentIndex + 1] : null;
 ---
 
 <Layout title={eventData.title + ' | Dòng Thời Gian'}>
@@ -37,15 +48,15 @@ const nextEvent = currentIndex < timelineData.length - 1 ? timelineData[currentI
       <!-- Event Hero -->
       {eventData.image && (
         <div class="relative h-[500px] rounded-3xl overflow-hidden mb-12 shadow-2xl">
-          <img 
+          <ImageZoom 
             src={eventData.image} 
             alt={eventData.title}
-            class="w-full h-full object-cover"
+            class="w-full h-full"
           />
-          <div class="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/80 to-transparent"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/80 to-transparent pointer-events-none"></div>
           
           <!-- Overlay Info -->
-          <div class="absolute bottom-0 left-0 right-0 p-12">
+          <div class="absolute bottom-0 left-0 right-0 p-12 pointer-events-none">
             <div class="flex items-center gap-4 mb-6">
               <div class="px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full text-stone-950 font-bold text-2xl shadow-xl">
                 {eventData.year}

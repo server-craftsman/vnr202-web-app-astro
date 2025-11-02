@@ -1,0 +1,493 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  class?: string;
+  thumbnail?: boolean;
+}
+
+const { src, alt, class: className = "", thumbnail = false } = Astro.props;
+const id = `image-zoom-${Math.random().toString(36).substr(2, 9)}`;
+---
+
+<div class={`relative ${className}`} data-zoom-wrapper={id}>
+  <img
+    src={src}
+    alt={alt}
+    class={`w-full h-full object-cover cursor-zoom-in transition-transform duration-300 hover:scale-105 ${
+      thumbnail ? "h-48 md:h-56" : "h-full"
+    }`}
+    data-zoom-src={src}
+    data-zoom-alt={alt}
+    data-zoom-id={id}
+    loading={thumbnail ? "lazy" : "eager"}
+    decoding="async"
+    fetchpriority={thumbnail ? "auto" : "high"}
+    onclick="return false;"
+    style="pointer-events: auto;"
+  />
+  <div
+    class="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-zoom-in group pointer-events-none"
+    data-zoom-trigger={id}
+  >
+    <!-- <svg
+      class="w-12 h-12 text-white/0 group-hover:text-white/80 transition-all duration-300 opacity-0 group-hover:opacity-100 pointer-events-none"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+      ></path>
+    </svg> -->
+  </div>
+</div>
+
+<div
+  id={`zoom-modal-${id}`}
+  class="fixed inset-0 bg-black/95 backdrop-blur-lg z-[9999] hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300"
+>
+  <button
+    class="absolute top-4 right-4 z-10 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+    data-zoom-close={id}
+    aria-label="Đóng ảnh"
+  >
+    <!-- <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M6 18L18 6M6 6l12 12"></path>
+    </svg> -->
+  </button>
+
+  <div
+    class="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full"
+    data-zoom-toolbar={id}
+  >
+    <button
+      data-zoom-in={id}
+      class="w-10 h-10 flex items-center justify-center text-white hover:bg-white/20 rounded-full transition-all hover:scale-110"
+      aria-label="Phóng to"
+    >
+      <!-- <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 4v16m8-8H4"></path>
+      </svg> -->
+    </button>
+    <button
+      data-zoom-out={id}
+      class="w-10 h-10 flex items-center justify-center text-white hover:bg-white/20 rounded-full transition-all hover:scale-110"
+      aria-label="Thu nhỏ"
+    >
+      <!-- <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M20 12H4"></path>
+      </svg> -->
+    </button>
+    <div class="w-px h-6 bg-white/30"></div>
+    <button
+      data-zoom-rotate={id}
+      class="w-10 h-10 flex items-center justify-center text-white hover:bg-white/20 rounded-full transition-all hover:scale-110"
+      aria-label="Xoay ảnh"
+    >
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+        ></path>
+      </svg>
+    </button>
+    <button
+      data-zoom-reset={id}
+      class="w-10 h-10 flex items-center justify-center text-white hover:bg-white/20 rounded-full transition-all hover:scale-110"
+      aria-label="Đặt lại"
+    >
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+        ></path>
+      </svg>
+    </button>
+    <div class="w-px h-6 bg-white/30"></div>
+    <span
+      data-zoom-scale={id}
+      class="px-3 py-1 text-white text-sm font-medium min-w-[60px] text-center"
+    >
+      100%
+    </span>
+  </div>
+
+  <div
+    id={`zoom-container-${id}`}
+    class="relative w-full h-full flex items-center justify-center overflow-auto"
+    data-zoom-container={id}
+  >
+    <img
+      id={`zoom-image-${id}`}
+      src=""
+      alt=""
+      class="w-auto h-auto max-w-none max-h-none select-none transition-transform duration-300"
+      loading="eager"
+      decoding="async"
+      draggable="false"
+      style="transform-origin: center center; display: block;"
+    />
+  </div>
+
+  <div
+    class="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full text-white text-sm font-medium max-w-md text-center"
+    id={`zoom-caption-${id}`}
+  >
+  </div>
+</div>
+
+<script is:inline define:vars={{ zoomId: id }}>
+  (function () {
+    function initZoom() {
+      const zoomId = "{zoomId}";
+      const wrapper = document.querySelector(`[data-zoom-wrapper="${zoomId}"]`);
+      const triggers = document.querySelectorAll(
+        `[data-zoom-trigger="${zoomId}"]`
+      );
+      const modal = document.getElementById(`zoom-modal-${zoomId}`);
+      const image = document.getElementById(`zoom-image-${zoomId}`);
+      const caption = document.getElementById(`zoom-caption-${zoomId}`);
+      const closeBtn = document.querySelector(`[data-zoom-close="${zoomId}"]`);
+      const sourceImg = document.querySelector(`[data-zoom-id="${zoomId}"]`);
+      const container = document.querySelector(
+        `[data-zoom-container="${zoomId}"]`
+      );
+      const toolbar = document.querySelector(`[data-zoom-toolbar="${zoomId}"]`);
+      const zoomInBtn = document.querySelector(`[data-zoom-in="${zoomId}"]`);
+      const zoomOutBtn = document.querySelector(`[data-zoom-out="${zoomId}"]`);
+      const rotateBtn = document.querySelector(
+        `[data-zoom-rotate="${zoomId}"]`
+      );
+      const resetBtn = document.querySelector(`[data-zoom-reset="${zoomId}"]`);
+      const scaleLabel = document.querySelector(
+        `[data-zoom-scale="${zoomId}"]`
+      );
+
+      if (
+        !modal ||
+        !image ||
+        !sourceImg ||
+        !caption ||
+        !closeBtn ||
+        !container ||
+        !wrapper
+      )
+        return;
+
+      let scale = 1;
+      let rotation = 0;
+      let translateX = 0;
+      let translateY = 0;
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let currentX = 0;
+      let currentY = 0;
+
+      function updateTransform() {
+        const transform = `translate(${translateX}px, ${translateY}px) scale(${scale}) rotate(${rotation}deg)`;
+        image.style.transform = transform;
+        if (scaleLabel) {
+          scaleLabel.textContent = Math.round(scale * 100) + "%";
+        }
+      }
+
+      function zoomIn() {
+        if (scale < 5) {
+          scale = Math.min(scale + 0.25, 5);
+          updateTransform();
+        }
+      }
+
+      function zoomOut() {
+        if (scale > 0.5) {
+          scale = Math.max(scale - 0.25, 0.5);
+          if (scale === 1) {
+            translateX = 0;
+            translateY = 0;
+          }
+          updateTransform();
+        }
+      }
+
+      function rotate() {
+        rotation = (rotation + 90) % 360;
+        updateTransform();
+      }
+
+      function reset() {
+        if (!image) return;
+
+        const imgWidth = image.naturalWidth || image.width;
+        const imgHeight = image.naturalHeight || image.height;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight - 200;
+
+        let initialScale = 1;
+
+        if (imgWidth > 0 && imgHeight > 0) {
+          if (imgWidth > viewportWidth || imgHeight > viewportHeight) {
+            const scaleX = viewportWidth / imgWidth;
+            const scaleY = viewportHeight / imgHeight;
+            initialScale = Math.min(scaleX, scaleY) * 0.9;
+          }
+        }
+
+        scale = initialScale;
+        rotation = 0;
+        translateX = 0;
+        translateY = 0;
+        updateTransform();
+      }
+
+      function handleWheel(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        const newScale = Math.max(0.5, Math.min(5, scale + delta));
+        scale = newScale;
+        if (scale === 1) {
+          translateX = 0;
+          translateY = 0;
+        }
+        updateTransform();
+      }
+
+      function handleMouseDown(e) {
+        if (scale < 1) return;
+        isDragging = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
+        image.style.cursor = "grabbing";
+        e.preventDefault();
+      }
+
+      function handleMouseMove(e) {
+        if (!isDragging || scale < 1) return;
+        e.preventDefault();
+        translateX = e.clientX - startX;
+        translateY = e.clientY - startY;
+        updateTransform();
+      }
+
+      function handleMouseUp() {
+        if (isDragging) {
+          isDragging = false;
+          image.style.cursor = scale >= 1 ? "grab" : "default";
+        }
+      }
+
+      function openZoom() {
+        if (!sourceImg || !image || !caption || !modal) return;
+
+        const src =
+          sourceImg.getAttribute("data-zoom-src") ||
+          sourceImg.getAttribute("src") ||
+          "";
+        const altText =
+          sourceImg.getAttribute("data-zoom-alt") ||
+          sourceImg.getAttribute("alt") ||
+          "";
+
+        if (image.tagName === "IMG") {
+          image.src = src;
+          image.alt = altText;
+
+          image.onload = function () {
+            const imgWidth = image.naturalWidth;
+            const imgHeight = image.naturalHeight;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight - 200;
+
+            let initialScale = 1;
+
+            if (imgWidth > viewportWidth || imgHeight > viewportHeight) {
+              const scaleX = viewportWidth / imgWidth;
+              const scaleY = viewportHeight / imgHeight;
+              initialScale = Math.min(scaleX, scaleY) * 0.9;
+            }
+
+            scale = initialScale;
+            updateTransform();
+          };
+        }
+        caption.textContent = altText;
+
+        reset();
+
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+
+        requestAnimationFrame(() => {
+          modal.classList.remove("opacity-0");
+          modal.classList.add("opacity-100");
+        });
+
+        document.body.style.overflow = "hidden";
+
+        image.addEventListener("wheel", handleWheel, { passive: false });
+        image.addEventListener("mousedown", handleMouseDown);
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+      }
+
+      function closeZoom() {
+        if (!modal) return;
+
+        image.removeEventListener("wheel", handleWheel);
+        image.removeEventListener("mousedown", handleMouseDown);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+
+        modal.classList.remove("opacity-100");
+        modal.classList.add("opacity-0");
+
+        setTimeout(() => {
+          if (modal) {
+            modal.classList.remove("flex");
+            modal.classList.add("hidden");
+          }
+          document.body.style.overflow = "";
+          reset();
+        }, 300);
+      }
+
+      const clickHandler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        openZoom();
+        return false;
+      };
+
+      if (sourceImg) {
+        sourceImg.addEventListener("click", clickHandler, true);
+        sourceImg.style.cursor = "zoom-in";
+      }
+
+      if (wrapper) {
+        wrapper.addEventListener("click", clickHandler, true);
+      }
+
+      triggers.forEach((trigger) => {
+        trigger.addEventListener("click", clickHandler, true);
+      });
+
+      wrapper.addEventListener(
+        "click",
+        (e) => {
+          if (
+            e.target === sourceImg ||
+            e.target.closest(`[data-zoom-id="${zoomId}"]`)
+          ) {
+            clickHandler(e);
+          }
+        },
+        true
+      );
+
+      if (closeBtn) {
+        closeBtn.addEventListener("click", closeZoom);
+      }
+
+      if (zoomInBtn) {
+        zoomInBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          zoomIn();
+        });
+      }
+
+      if (zoomOutBtn) {
+        zoomOutBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          zoomOut();
+        });
+      }
+
+      if (rotateBtn) {
+        rotateBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          rotate();
+        });
+      }
+
+      if (resetBtn) {
+        resetBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          reset();
+        });
+      }
+
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal || e.target === container) {
+          closeZoom();
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (!modal || modal.classList.contains("hidden")) return;
+
+        if (e.key === "Escape") {
+          closeZoom();
+        } else if (e.key === "+" || e.key === "=") {
+          e.preventDefault();
+          zoomIn();
+        } else if (e.key === "-" || e.key === "_") {
+          e.preventDefault();
+          zoomOut();
+        } else if (e.key === "r" || e.key === "R") {
+          e.preventDefault();
+          rotate();
+        } else if (e.key === "0") {
+          e.preventDefault();
+          reset();
+        }
+      });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initZoom);
+    } else {
+      initZoom();
+    }
+  })();
+</script>

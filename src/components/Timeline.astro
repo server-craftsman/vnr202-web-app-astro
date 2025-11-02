@@ -2,6 +2,7 @@
 import { timelineData } from "../data/timeline";
 import { slugify } from "../utils/slugify";
 import Icon from "./Icons.astro";
+import ImageZoom from "./ImageZoom.astro";
 ---
 
 <section class="relative py-24 md:py-32 bg-gradient-to-b from-stone-900 via-neutral-900 to-stone-950" id="timeline">
@@ -35,13 +36,14 @@ import Icon from "./Icons.astro";
                   
                   <!-- Event Image -->
                   {event.image && (
-                    <div class="relative h-48 md:h-56 overflow-hidden">
-                      <img 
+                    <div class="relative h-48 md:h-56 overflow-hidden rounded-t-3xl" data-timeline-image-wrapper onclick={`return false;`}>
+                      <ImageZoom 
                         src={event.image} 
                         alt={event.title}
-                        class="w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-700"
+                        thumbnail={true}
+                        class="w-full h-full relative z-10"
                       />
-                      <div class="absolute inset-0 bg-gradient-to-t from-stone-900 to-transparent opacity-80"></div>
+                      <div class="absolute inset-0 bg-gradient-to-t from-stone-900 to-transparent opacity-80 pointer-events-none z-0"></div>
                     </div>
                   )}
                   

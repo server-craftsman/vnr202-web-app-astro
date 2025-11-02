@@ -104,17 +104,76 @@ const storeItems = [
           Trải nghiệm mua sắm thời bao cấp - Cần tem phiếu mới mua được hàng!
         </p>
 
-        <!-- Queue Status -->
-        <div
-          class="inline-flex items-center gap-3 px-6 py-3 bg-red-500/20 border border-red-500/40 rounded-full text-red-300 font-semibold"
-        >
-          <Icon name="users" class="w-5 h-5" />
-          <span
-            >Số người đang chờ: <span id="queue-count" class="font-bold"
-              >47</span
-            ></span
+        <!-- Stats Bar -->
+        <div class="flex items-center justify-center gap-4 mb-8 flex-wrap">
+          <div
+            class="px-6 py-3 bg-red-500/20 border border-red-500/40 rounded-2xl text-red-300 font-semibold transition-all duration-300"
+            id="queue-container"
           >
+            <div class="flex items-center gap-2">
+              <Icon name="users" class="w-5 h-5" />
+              <span
+                >Hàng chờ: <span id="queue-count" class="font-bold text-xl"
+                  >47</span
+                ></span
+              >
+            </div>
+          </div>
+          <div
+            class="px-6 py-3 bg-green-500/20 border border-green-500/40 rounded-2xl text-green-300 font-semibold transition-all duration-300"
+            id="purchases-container"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="star" class="w-5 h-5" />
+              <span
+                >Đã mua: <span id="total-purchases" class="font-bold text-xl"
+                  >0</span
+                ></span
+              >
+            </div>
+          </div>
+          <div
+            class="px-6 py-3 bg-blue-500/20 border border-blue-500/40 rounded-2xl text-blue-300 font-semibold transition-all duration-300"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="chart-bar" class="w-5 h-5" />
+              <span
+                >Tổng tiền: <span id="total-spent" class="font-bold text-xl"
+                  >0đ</span
+                ></span
+              >
+            </div>
+          </div>
         </div>
+
+        <!-- Power-ups Bar -->
+        <div class="flex items-center justify-center gap-4 mb-6 flex-wrap" id="powerups-bar">
+          <button
+            id="powerup-bonus-tem"
+            class="px-4 py-2 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/40 rounded-xl text-indigo-300 font-semibold hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Nhận bonus tem phiếu (Còn: 2)"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="document" class="w-4 h-4" />
+              <span>Bonus Tem</span>
+              <span id="bonus-tem-count" class="text-xs bg-indigo-500/30 px-2 py-0.5 rounded-full">2</span>
+            </div>
+          </button>
+          <button
+            id="powerup-discount"
+            class="px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded-xl text-yellow-300 font-semibold hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Giảm giá 20% cho lần mua tiếp theo (Còn: 1)"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="sparkles" class="w-4 h-4" />
+              <span>Giảm giá</span>
+              <span id="discount-count" class="text-xs bg-yellow-500/30 px-2 py-0.5 rounded-full">1</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Notification Area -->
+        <div id="notification-area" class="fixed top-4 right-4 z-50 space-y-2 max-w-sm"></div>
       </div>
 
       <div class="grid lg:grid-cols-3 gap-8">
@@ -244,9 +303,20 @@ const storeItems = [
                 >
               </div>
               <div class="text-xs text-neutral-400 space-y-1" id="tem-status">
-                <div>• Tem Gạo: ✓</div>
-                <div>• Tem Đường: ✓</div>
-                <div>• Tem Dầu: ✓</div>
+                <!-- Will be filled by JS -->
+              </div>
+            </div>
+
+            <!-- Achievements Display -->
+            <div class="mt-6 p-4 bg-purple-900/20 border border-purple-500/20 rounded-xl" id="achievements-preview">
+              <div class="flex items-center gap-2 mb-2">
+                <Icon name="sparkles" class="w-4 h-4 text-purple-400" />
+                <span class="text-sm font-semibold text-purple-300"
+                  >Thành tích:</span
+                >
+              </div>
+              <div class="flex flex-wrap gap-2" id="achievements-list">
+                <!-- Will be filled by JS -->
               </div>
             </div>
           </div>
@@ -298,8 +368,173 @@ const storeItems = [
   <SuccessPopup />
 </Layout>
 
+<style>
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .notification-enter {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  @keyframes pulse-scale {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .animate-pulse-scale {
+    animation: pulse-scale 1s ease-in-out infinite;
+  }
+
+  .powerup-active {
+    animation: pulse-scale 0.5s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  }
+
+  .discount-active {
+    border-color: #fbbf24 !important;
+    background: rgba(251, 191, 36, 0.2) !important;
+    animation: pulse-scale 0.5s ease-in-out infinite;
+  }
+</style>
+
 <script>
-  let cart: Array<{ name: string; price: string }> = [];
+  let cart: Array<{ name: string; price: string; tem: string }> = [];
+  let temPhieu: Record<string, number> = {
+    "Tem Phiếu Gạo": 1,
+    "Tem Phiếu Đường": 1,
+    "Tem Phiếu Dầu": 1,
+    "Tem Phiếu Mì": 1,
+    "Tem Phiếu XP": 1,
+  };
+  let totalPurchases = 0;
+  let totalSpent = 0;
+  let queueCount = 47;
+  let bonusTemRemaining = 2;
+  let discountRemaining = 1;
+  let isDiscountActive = false;
+  let achievements: string[] = [];
+
+  const itemTemMap: Record<string, string> = {
+    "Gạo": "Tem Phiếu Gạo",
+    "Thịt lợn": "Tem Phiếu Thịt",
+    "Đường": "Tem Phiếu Đường",
+    "Dầu ăn": "Tem Phiếu Dầu",
+    "Vải": "Tem Phiếu Vải",
+    "Xà phòng": "Tem Phiếu XP",
+    "Mì": "Tem Phiếu Mì",
+    "Bánh mì": "Tem Phiếu Bánh",
+  };
+
+  function showNotification(message: string, type: "success" | "error" | "info" | "warning" = "info", duration: number = 3000) {
+    const notificationArea = document.getElementById("notification-area");
+    if (!notificationArea) return;
+
+    const notification = document.createElement("div");
+    const bgColors = {
+      success: "from-green-500/20 to-emerald-500/20 border-green-500/40 text-green-300",
+      error: "from-red-500/20 to-orange-500/20 border-red-500/40 text-red-300",
+      info: "from-blue-500/20 to-indigo-500/20 border-blue-500/40 text-blue-300",
+      warning: "from-yellow-500/20 to-amber-500/20 border-yellow-500/40 text-yellow-300"
+    };
+
+    notification.className = `notification-enter px-6 py-4 bg-gradient-to-r ${bgColors[type]} border rounded-2xl shadow-2xl backdrop-blur-xl font-semibold`;
+    notification.textContent = message;
+    notificationArea.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.transition = "all 0.3s ease-out";
+      notification.style.transform = "translateX(100%)";
+      notification.style.opacity = "0";
+      setTimeout(() => notification.remove(), 300);
+    }, duration);
+  }
+
+  function checkAndAddAchievement(id: string, icon: string, text: string) {
+    if (achievements.includes(id)) return;
+    
+    achievements.push(id);
+    updateAchievements();
+    showNotification(`🏆 ${icon} ${text}`, "warning", 4000);
+  }
+
+  function updateAchievements() {
+    const achievementsList = document.getElementById("achievements-list");
+    if (!achievementsList) return;
+
+    achievementsList.innerHTML = achievements
+      .map(ach => {
+        const achievementData: Record<string, { icon: string; text: string }> = {
+          "first_purchase": { icon: "🛒", text: "Mua hàng đầu tiên" },
+          "big_spender": { icon: "💰", text: "Tiêu nhiều tiền" },
+          "smart_shopper": { icon: "🧠", text: "Mua sắm thông minh" },
+          "queue_master": { icon: "⚡", text: "Vượt qua hàng chờ" },
+          "tem_collector": { icon: "📄", text: "Thu thập tem" },
+          "bulk_buyer": { icon: "📦", text: "Mua số lượng lớn" },
+          "discount_user": { icon: "🎯", text: "Dùng giảm giá" },
+        };
+        
+        const data = achievementData[ach];
+        if (!data) return "";
+        
+        return `<span class="px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-xs text-purple-300 font-semibold">${data.icon} ${data.text}</span>`;
+      })
+      .filter(Boolean)
+      .join("");
+  }
+
+  function updateTemStatus() {
+    const temStatusEl = document.getElementById("tem-status");
+    if (!temStatusEl) return;
+
+    temStatusEl.innerHTML = Object.entries(temPhieu)
+      .map(([tem, count]) => {
+        const hasTem = count > 0;
+        return `<div class="${hasTem ? "text-green-400" : "text-red-400"}">• ${tem.replace("Tem Phiếu ", "")}: ${hasTem ? "✓" : "✗"} ${count > 1 ? `(${count})` : ""}</div>`;
+      })
+      .join("");
+  }
+
+  function updateStats() {
+    const totalPurchasesEl = document.getElementById("total-purchases");
+    const totalSpentEl = document.getElementById("total-spent");
+    const queueEl = document.getElementById("queue-count");
+    const bonusTemCountEl = document.getElementById("bonus-tem-count");
+    const discountCountEl = document.getElementById("discount-count");
+
+    if (totalPurchasesEl) {
+      totalPurchasesEl.textContent = totalPurchases.toString();
+      totalPurchasesEl.parentElement?.parentElement?.classList.add("scale-110");
+      setTimeout(() => {
+        totalPurchasesEl.parentElement?.parentElement?.classList.remove("scale-110");
+      }, 300);
+    }
+    if (totalSpentEl) totalSpentEl.textContent = totalSpent.toFixed(2) + "đ";
+    if (queueEl) {
+      queueEl.textContent = queueCount.toString();
+      const queueContainer = document.getElementById("queue-container");
+      if (queueCount <= 10) {
+        queueContainer?.classList.add("animate-pulse", "border-green-500/60");
+      } else {
+        queueContainer?.classList.remove("animate-pulse", "border-green-500/60");
+      }
+    }
+    if (bonusTemCountEl) bonusTemCountEl.textContent = bonusTemRemaining.toString();
+    if (discountCountEl) discountCountEl.textContent = discountRemaining.toString();
+
+    const bonusTemBtn = document.getElementById("powerup-bonus-tem") as HTMLButtonElement;
+    const discountBtn = document.getElementById("powerup-discount") as HTMLButtonElement;
+
+    if (bonusTemBtn) bonusTemBtn.disabled = bonusTemRemaining === 0;
+    if (discountBtn) discountBtn.disabled = discountRemaining === 0 || isDiscountActive;
+  }
 
   // Popup functions
   function showSuccessPopup(
@@ -378,9 +613,14 @@ const storeItems = [
     } else {
       cartItems!.innerHTML = cart
         .map(
-          (item, idx) => `
-        <div class="flex items-center justify-between p-3 bg-stone-900/50 border border-amber-500/10 rounded-lg">
-          <span class="text-neutral-200">${item.name}</span>
+          (item, idx) => {
+            const hasTem = temPhieu[item.tem] > 0;
+            return `
+        <div class="flex items-center justify-between p-3 bg-stone-900/50 border ${hasTem ? "border-amber-500/10" : "border-red-500/30"} rounded-lg transition-all">
+          <div class="flex-1">
+            <span class="text-neutral-200 block">${item.name}</span>
+            ${!hasTem ? '<span class="text-xs text-red-400">⚠️ Thiếu tem phiếu</span>' : ''}
+          </div>
           <div class="flex items-center gap-3">
             <span class="text-amber-400 font-semibold text-sm">${item.price}</span>
             <button class="remove-item w-6 h-6 bg-red-500/20 border border-red-500/40 rounded-full flex items-center justify-center hover:bg-red-500/40 transition-colors" data-index="${idx}">
@@ -388,12 +628,13 @@ const storeItems = [
             </button>
           </div>
         </div>
-      `
+      `;
+          }
         )
         .join("");
 
       // Calculate total
-      const total = cart.reduce((sum, item) => {
+      let total = cart.reduce((sum, item) => {
         const price = parseFloat(
           item.price
             .replace("đ/kg", "")
@@ -406,9 +647,37 @@ const storeItems = [
         return sum + price;
       }, 0);
 
-      totalPrice!.textContent = total.toFixed(2) + "đ";
+      if (isDiscountActive) {
+        total = total * 0.8;
+        totalPrice!.innerHTML = `<span class="line-through text-neutral-500 text-sm mr-2">${cart.reduce((sum, item) => {
+          const price = parseFloat(
+            item.price
+              .replace("đ/kg", "")
+              .replace("đ/lít", "")
+              .replace("đ/m", "")
+              .replace("đ/bánh", "")
+              .replace("đ/gói", "")
+              .replace("đ/ổ", "")
+          );
+          return sum + price;
+        }, 0).toFixed(2)}đ</span><span class="text-green-400">${total.toFixed(2)}đ</span> <span class="text-xs text-yellow-400">(-20%)</span>`;
+      } else {
+        totalPrice!.textContent = total.toFixed(2) + "đ";
+      }
+
       itemCount!.textContent = cart.length.toString();
-      checkoutBtn!.disabled = false;
+      
+      // Check if all items have tem
+      const allHaveTem = cart.every(item => temPhieu[item.tem] > 0);
+      checkoutBtn!.disabled = !allHaveTem || cart.length === 0;
+      
+      if (!allHaveTem && cart.length > 0) {
+        checkoutBtn!.title = "Một số mặt hàng thiếu tem phiếu!";
+        checkoutBtn!.classList.add("opacity-50", "cursor-not-allowed");
+      } else {
+        checkoutBtn!.title = "";
+        checkoutBtn!.classList.remove("opacity-50", "cursor-not-allowed");
+      }
 
       // Add remove listeners
       document.querySelectorAll(".remove-item").forEach((btn) => {
@@ -435,12 +704,23 @@ const storeItems = [
       if (itemData) {
         const price =
           itemData.querySelector(".text-amber-400")?.textContent || "0đ";
-        cart.push({ name: itemName || "", price });
+        const tem = itemTemMap[itemName || ""] || "";
+        
+        cart.push({ name: itemName || "", price, tem });
         updateCart();
+        updateTemStatus();
 
         // Visual feedback
         btn.textContent = "✓ Đã thêm";
         btn.classList.add("bg-green-500", "from-green-500", "to-emerald-600");
+        
+        // Check tem availability
+        if (temPhieu[tem] > 0) {
+          showNotification(`✅ Đã thêm ${itemName} vào giỏ!`, "success", 2000);
+        } else {
+          showNotification(`⚠️ ${itemName} cần tem phiếu! Sử dụng Bonus Tem?`, "warning", 3000);
+        }
+
         setTimeout(() => {
           btn.textContent = "Thêm vào giỏ";
           btn.classList.remove(
@@ -455,25 +735,133 @@ const storeItems = [
 
   // Checkout
   document.getElementById("checkout-btn")?.addEventListener("click", () => {
-    if (cart.length > 0) {
-      const total = document.getElementById("total-price")?.textContent || "0đ";
-      const cartCopy = [...cart];
+    if (cart.length === 0) return;
 
-      // Show beautiful popup
-      showSuccessPopup(cartCopy, total);
+    // Validate all items have tem
+    const missingTem = cart.filter(item => temPhieu[item.tem] === 0);
+    if (missingTem.length > 0) {
+      showNotification("❌ Một số mặt hàng thiếu tem phiếu! Không thể thanh toán.", "error", 3000);
+      return;
+    }
 
-      // Clear cart
-      cart = [];
-      updateCart();
+    // Calculate total
+    let total = cart.reduce((sum, item) => {
+      const price = parseFloat(
+        item.price
+          .replace("đ/kg", "")
+          .replace("đ/lít", "")
+          .replace("đ/m", "")
+          .replace("đ/bánh", "")
+          .replace("đ/gói", "")
+          .replace("đ/ổ", "")
+      );
+      return sum + price;
+    }, 0);
 
-      // Decrease queue
-      const queueEl = document.getElementById("queue-count");
-      if (queueEl) {
-        const current = parseInt(queueEl.textContent || "47");
-        queueEl.textContent = Math.max(0, current - 1).toString();
+    const originalTotal = total;
+    if (isDiscountActive) {
+      total = total * 0.8;
+      isDiscountActive = false;
+      showNotification("✅ Đã áp dụng giảm giá 20%!", "success", 2000);
+    }
+
+    const cartCopy = cart.map(item => ({ name: item.name, price: item.price }));
+    const totalStr = total.toFixed(2) + "đ";
+
+    // Deduct tem phiếu
+    cart.forEach(item => {
+      if (temPhieu[item.tem] > 0) {
+        temPhieu[item.tem]--;
       }
+    });
+
+    // Update stats
+    totalPurchases++;
+    totalSpent += total;
+    
+    // Achievements
+    if (totalPurchases === 1) {
+      checkAndAddAchievement("first_purchase", "🛒", "Mua hàng đầu tiên");
+    }
+    if (totalSpent >= 50) {
+      checkAndAddAchievement("big_spender", "💰", "Tiêu nhiều tiền");
+    }
+    if (cart.length >= 5) {
+      checkAndAddAchievement("bulk_buyer", "📦", "Mua số lượng lớn");
+    }
+    if (queueCount === 0) {
+      checkAndAddAchievement("queue_master", "⚡", "Vượt qua hàng chờ");
+    }
+
+    // Show popup
+    showSuccessPopup(cartCopy, totalStr);
+
+    // Clear cart
+    cart = [];
+    updateCart();
+    updateTemStatus();
+    updateStats();
+
+    // Decrease queue
+    queueCount = Math.max(0, queueCount - 1);
+
+    // Emotional feedback
+    if (cartCopy.length >= 5) {
+      showNotification(`🎉 Tuyệt vời! Bạn đã mua ${cartCopy.length} mặt hàng!`, "success", 3000);
+    } else {
+      showNotification(`✅ Mua hàng thành công!`, "success", 2000);
     }
   });
 
+  // Power-ups
+  function useBonusTem() {
+    if (bonusTemRemaining === 0) return;
+    
+    bonusTemRemaining--;
+    const temKeys = Object.keys(temPhieu);
+    const randomTem = temKeys[Math.floor(Math.random() * temKeys.length)];
+    temPhieu[randomTem]++;
+    
+    updateTemStatus();
+    updateStats();
+    showNotification(`🎁 Nhận bonus ${randomTem}!`, "success", 3000);
+    checkAndAddAchievement("tem_collector", "📄", "Thu thập tem");
+    playSound("bonus");
+  }
+
+  function useDiscount() {
+    if (discountRemaining === 0 || isDiscountActive) return;
+    
+    discountRemaining--;
+    isDiscountActive = true;
+    updateStats();
+    updateCart();
+    
+    const discountBtn = document.getElementById("powerup-discount") as HTMLButtonElement;
+    if (discountBtn) {
+      discountBtn.classList.add("powerup-active");
+    }
+    
+    showNotification("💰 Giảm giá 20% cho lần mua tiếp theo!", "warning", 3000);
+    checkAndAddAchievement("discount_user", "🎯", "Dùng giảm giá");
+    playSound("discount");
+  }
+
+  // Power-up event listeners
+  document.getElementById("powerup-bonus-tem")?.addEventListener("click", useBonusTem);
+  document.getElementById("powerup-discount")?.addEventListener("click", useDiscount);
+
+  // Initialize
   updateCart();
+  updateTemStatus();
+  updateStats();
+  updateAchievements();
+
+  // Auto-update queue occasionally
+  setInterval(() => {
+    if (queueCount > 0 && Math.random() > 0.7) {
+      queueCount = Math.max(0, queueCount - Math.floor(Math.random() * 3));
+      updateStats();
+    }
+  }, 3000);
 </script>

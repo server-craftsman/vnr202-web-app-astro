@@ -41,7 +41,8 @@ import Icon from "../../components/Icons.astro";
         <!-- Score & Level Display -->
         <div class="flex items-center justify-center gap-4 mb-8 flex-wrap">
           <div
-            class="px-6 py-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-2xl shadow-xl"
+            class="px-6 py-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-2xl shadow-xl transition-all duration-300"
+            id="score-container"
           >
             <div class="flex items-center gap-2">
               <Icon name="star" class="w-5 h-5 text-green-400" />
@@ -51,7 +52,8 @@ import Icon from "../../components/Icons.astro";
             </div>
           </div>
           <div
-            class="px-6 py-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 rounded-2xl shadow-xl"
+            class="px-6 py-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 rounded-2xl shadow-xl transition-all duration-300"
+            id="combo-container"
           >
             <div class="flex items-center gap-2">
               <Icon name="sparkles" class="w-5 h-5 text-purple-400" />
@@ -61,7 +63,7 @@ import Icon from "../../components/Icons.astro";
             </div>
           </div>
           <div
-            class="px-6 py-3 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/40 rounded-2xl shadow-xl"
+            class="px-6 py-3 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/40 rounded-2xl shadow-xl transition-all duration-300"
           >
             <div class="flex items-center gap-2">
               <Icon name="chart-bar" class="w-5 h-5 text-blue-400" />
@@ -71,7 +73,8 @@ import Icon from "../../components/Icons.astro";
             </div>
           </div>
           <div
-            class="px-6 py-3 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 rounded-2xl shadow-xl"
+            class="px-6 py-3 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 rounded-2xl shadow-xl transition-all duration-300"
+            id="timer-container"
           >
             <div class="flex items-center gap-2">
               <Icon name="clock" class="w-5 h-5 text-amber-400" />
@@ -80,7 +83,58 @@ import Icon from "../../components/Icons.astro";
               >
             </div>
           </div>
+          <div
+            class="px-6 py-3 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/40 rounded-2xl shadow-xl transition-all duration-300"
+            id="streak-container"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="light-bulb" class="w-5 h-5 text-red-400" />
+              <span class="text-red-300 font-bold text-lg"
+                >Chuỗi: <span id="streak" class="text-2xl">0</span></span
+              >
+            </div>
+          </div>
         </div>
+
+        <!-- Power-ups Bar -->
+        <div id="powerups-bar" class="hidden flex items-center justify-center gap-4 mb-6 flex-wrap">
+          <button
+            id="powerup-hint"
+            class="px-4 py-2 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/40 rounded-xl text-indigo-300 font-semibold hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Gợi ý (Còn: 3)"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="light-bulb" class="w-4 h-4" />
+              <span>Gợi ý</span>
+              <span id="hint-count" class="text-xs bg-indigo-500/30 px-2 py-0.5 rounded-full">3</span>
+            </div>
+          </button>
+          <button
+            id="powerup-freeze"
+            class="px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 rounded-xl text-cyan-300 font-semibold hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Dừng thời gian 5s (Còn: 2)"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="clock" class="w-4 h-4" />
+              <span>Đóng băng</span>
+              <span id="freeze-count" class="text-xs bg-cyan-500/30 px-2 py-0.5 rounded-full">2</span>
+            </div>
+          </button>
+          <button
+            id="powerup-double"
+            class="px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded-xl text-yellow-300 font-semibold hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Nhân đôi điểm 10s (Còn: 1)"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="sparkles" class="w-4 h-4" />
+              <span>Nhân đôi</span>
+              <span id="double-count" class="text-xs bg-yellow-500/30 px-2 py-0.5 rounded-full">1</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Notification Area -->
+        <div id="notification-area" class="fixed top-4 right-4 z-50 space-y-2 max-w-sm"></div>
       </div>
 
       <!-- Game Container -->
@@ -126,17 +180,48 @@ import Icon from "../../components/Icons.astro";
                 />
                 <span>3 cấp độ - mỗi cấp khó và nhiều món hơn!</span>
               </li>
+              <li class="flex items-start gap-3 text-lg">
+                <Icon
+                  name="check"
+                  class="w-6 h-6 text-amber-400 mt-1 flex-shrink-0"
+                />
+                <span>Sử dụng Power-ups: Gợi ý, Đóng băng thời gian, Nhân đôi điểm</span>
+              </li>
+              <li class="flex items-start gap-3 text-lg">
+                <Icon
+                  name="check"
+                  class="w-6 h-6 text-amber-400 mt-1 flex-shrink-0"
+                />
+                <span>Chuỗi đúng liên tiếp tăng điểm và combo nhanh hơn!</span>
+              </li>
             </ul>
             <div
-              class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-4"
+              class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-4 mb-4"
             >
               <div
                 class="flex items-center gap-2 text-purple-300 justify-center"
               >
                 <Icon name="sparkles" class="w-5 h-5" />
                 <span class="font-bold"
-                  >Mục tiêu: Đạt 150 điểm để chiến thắng!</span
+                  >Mục tiêu: Đạt 200 điểm để chiến thắng!</span
                 >
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mt-4">
+              <div class="bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-500/30 rounded-xl p-3 text-center">
+                <div class="text-2xl mb-1">🏆</div>
+                <div class="text-xs text-green-300 font-semibold">Chiến thắng</div>
+                <div class="text-xs text-neutral-400">Đạt 200 điểm</div>
+              </div>
+              <div class="bg-gradient-to-br from-purple-500/10 to-pink-500/5 border border-purple-500/30 rounded-xl p-3 text-center">
+                <div class="text-2xl mb-1">🔥</div>
+                <div class="text-xs text-purple-300 font-semibold">Combo Master</div>
+                <div class="text-xs text-neutral-400">Combo ×5</div>
+              </div>
+              <div class="bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border border-blue-500/30 rounded-xl p-3 text-center">
+                <div class="text-2xl mb-1">⚡</div>
+                <div class="text-xs text-blue-300 font-semibold">Tốc độ</div>
+                <div class="text-xs text-neutral-400">Hoàn thành nhanh</div>
               </div>
             </div>
           </div>
@@ -209,25 +294,41 @@ import Icon from "../../components/Icons.astro";
 
         <!-- Game Over Screen -->
         <div id="game-over" class="hidden text-center">
-          <div class="text-8xl mb-6 animate-bounce">🎉</div>
+          <div id="game-over-icon" class="text-8xl mb-6 animate-bounce">🎉</div>
           <h2
             class="font-['Playfair_Display'] text-5xl font-bold mb-6 bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent"
+            id="game-over-title"
           >
             Hoàn thành!
           </h2>
-          <div class="text-3xl text-neutral-200 mb-4">
+          <div class="text-3xl text-neutral-200 mb-2">
             Điểm của bạn: <span
               id="final-score"
               class="text-6xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent"
               >0</span
             >
           </div>
+          <div class="grid grid-cols-3 gap-4 mb-6 max-w-2xl mx-auto">
+            <div class="bg-stone-800/40 border border-amber-500/20 rounded-xl p-4">
+              <div class="text-2xl text-amber-300 font-bold" id="final-combo">×1</div>
+              <div class="text-xs text-neutral-400">Combo cao nhất</div>
+            </div>
+            <div class="bg-stone-800/40 border border-amber-500/20 rounded-xl p-4">
+              <div class="text-2xl text-amber-300 font-bold" id="final-streak">0</div>
+              <div class="text-xs text-neutral-400">Chuỗi dài nhất</div>
+            </div>
+            <div class="bg-stone-800/40 border border-amber-500/20 rounded-xl p-4">
+              <div class="text-2xl text-amber-300 font-bold" id="final-time">0s</div>
+              <div class="text-xs text-neutral-400">Thời gian còn lại</div>
+            </div>
+          </div>
           <div
             id="achievements"
-            class="flex flex-wrap justify-center gap-3 mb-8"
+            class="flex flex-wrap justify-center gap-3 mb-8 max-w-3xl mx-auto"
           >
             <!-- Achievements will be added by JS -->
           </div>
+          <div id="story-message" class="mb-6 text-neutral-300 text-lg italic max-w-2xl mx-auto"></div>
           <button
             id="play-again"
             class="px-12 py-5 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full text-stone-950 font-bold text-xl shadow-2xl shadow-amber-500/40 hover:shadow-amber-500/60 hover:scale-110 transition-all duration-300 flex items-center gap-3 mx-auto"
@@ -284,6 +385,65 @@ import Icon from "../../components/Icons.astro";
   .animate-shimmer {
     animation: shimmer 2s linear infinite;
   }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  @keyframes pulse-scale {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+  .animate-pulse-scale {
+    animation: pulse-scale 1s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .animate-float {
+    animation: float 2s ease-in-out infinite;
+  }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.8); }
+  }
+  .animate-glow {
+    animation: glow 1.5s ease-in-out infinite;
+  }
+
+  .powerup-active {
+    animation: pulse-scale 0.5s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  }
+
+  .notification-enter {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .hint-glow {
+    animation: glow 1s ease-in-out infinite;
+    border-color: #60a5fa !important;
+    background: rgba(96, 165, 250, 0.2) !important;
+  }
 </style>
 
 <script>
@@ -297,6 +457,17 @@ import Icon from "../../components/Icons.astro";
   let maxCombo = 1;
   let timerInterval: number | null = null;
   let correctStreak = 0;
+  let maxStreak = 0;
+  let hintsRemaining = 3;
+  let freezeRemaining = 2;
+  let doubleRemaining = 1;
+  let isFrozen = false;
+  let isDoubleActive = false;
+  let doubleEndTime = 0;
+  let gameStartTime = 0;
+  let perfectMatches = 0;
+  let totalMatches = 0;
+  let powerUpUsed = false;
 
   // Particle system for effects
   const canvas = document.getElementById(
@@ -368,11 +539,65 @@ import Icon from "../../components/Icons.astro";
   }
   animateParticles();
 
-  function createExplosion(x: number, y: number, isCorrect: boolean) {
+  function createExplosion(x: number, y: number, isCorrect: boolean, count: number = 30) {
     const color = isCorrect ? "#10b981" : "#ef4444";
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < count; i++) {
       particles.push(new Particle(x, y, color));
     }
+  }
+
+  function createStarBurst(x: number, y: number) {
+    const colors = ["#fbbf24", "#f59e0b", "#d97706", "#92400e"];
+    for (let i = 0; i < 50; i++) {
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      particles.push(new Particle(x, y, color));
+    }
+  }
+
+  function showNotification(message: string, type: "success" | "error" | "info" | "warning" = "info", duration: number = 3000) {
+    const notificationArea = document.getElementById("notification-area");
+    if (!notificationArea) return;
+
+    const notification = document.createElement("div");
+    const bgColors = {
+      success: "from-green-500/20 to-emerald-500/20 border-green-500/40 text-green-300",
+      error: "from-red-500/20 to-orange-500/20 border-red-500/40 text-red-300",
+      info: "from-blue-500/20 to-indigo-500/20 border-blue-500/40 text-blue-300",
+      warning: "from-yellow-500/20 to-amber-500/20 border-yellow-500/40 text-yellow-300"
+    };
+
+    notification.className = `notification-enter px-6 py-4 bg-gradient-to-r ${bgColors[type]} border rounded-2xl shadow-2xl backdrop-blur-xl font-semibold`;
+    notification.textContent = message;
+    notificationArea.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.transition = "all 0.3s ease-out";
+      notification.style.transform = "translateX(100%)";
+      notification.style.opacity = "0";
+      setTimeout(() => notification.remove(), 300);
+    }, duration);
+  }
+
+  function showEmotionalMessage(type: "excellent" | "great" | "good" | "try_again") {
+    const messages = {
+      excellent: { emoji: "🌟", text: "Xuất sắc! Bạn đang làm rất tốt!", color: "from-yellow-400 to-amber-500" },
+      great: { emoji: "🎯", text: "Tuyệt vời! Tiếp tục phát huy!", color: "from-green-400 to-emerald-500" },
+      good: { emoji: "👍", text: "Tốt lắm! Giữ vững phong độ!", color: "from-blue-400 to-indigo-500" },
+      try_again: { emoji: "💪", text: "Cố gắng thêm! Bạn làm được!", color: "from-purple-400 to-pink-500" }
+    };
+
+    const msg = messages[type];
+    const msgEl = document.createElement("div");
+    msgEl.className = `fixed top-1/4 left-1/2 -translate-x-1/2 px-8 py-4 bg-gradient-to-r ${msg.color} text-white font-bold text-2xl rounded-3xl shadow-2xl z-50 animate-bounce`;
+    msgEl.innerHTML = `<span class="text-4xl mr-2">${msg.emoji}</span>${msg.text}`;
+    document.body.appendChild(msgEl);
+
+    setTimeout(() => {
+      msgEl.style.transition = "all 0.5s ease-out";
+      msgEl.style.opacity = "0";
+      msgEl.style.transform = "translate(-50%, -20px)";
+      setTimeout(() => msgEl.remove(), 500);
+    }, 2000);
   }
 
   // Game Data
@@ -396,12 +621,52 @@ import Icon from "../../components/Icons.astro";
   }
 
   function updateUI() {
-    document.getElementById("score")!.textContent = score.toString();
-    document.getElementById("level")!.textContent = level.toString();
-    document.getElementById("timer")!.textContent = timeLeft.toString();
-    document.getElementById("combo")!.textContent = `×${combo}`;
-    document.getElementById("completed")!.textContent = completed.toString();
-    document.getElementById("total")!.textContent = total.toString();
+    const scoreEl = document.getElementById("score");
+    const levelEl = document.getElementById("level");
+    const timerEl = document.getElementById("timer");
+    const comboEl = document.getElementById("combo");
+    const streakEl = document.getElementById("streak");
+    const completedEl = document.getElementById("completed");
+    const totalEl = document.getElementById("total");
+
+    if (scoreEl) {
+      scoreEl.textContent = score.toString();
+      // Animate score increase
+      scoreEl.parentElement?.parentElement?.classList.add("scale-110");
+      setTimeout(() => {
+        scoreEl.parentElement?.parentElement?.classList.remove("scale-110");
+      }, 300);
+    }
+    if (levelEl) levelEl.textContent = level.toString();
+    if (timerEl) {
+      timerEl.textContent = timeLeft.toString();
+      const timerContainer = document.getElementById("timer-container");
+      if (timeLeft <= 10) {
+        timerContainer?.classList.add("animate-pulse", "border-red-500/60");
+      } else {
+        timerContainer?.classList.remove("animate-pulse", "border-red-500/60");
+      }
+    }
+    if (comboEl) {
+      comboEl.textContent = `×${combo}`;
+      const comboContainer = document.getElementById("combo-container");
+      if (combo > 2) {
+        comboContainer?.classList.add("animate-pulse-scale", "scale-110", "border-purple-500/60");
+      } else {
+        comboContainer?.classList.remove("animate-pulse-scale", "scale-110", "border-purple-500/60");
+      }
+    }
+    if (streakEl) {
+      streakEl.textContent = correctStreak.toString();
+      const streakContainer = document.getElementById("streak-container");
+      if (correctStreak > 3) {
+        streakContainer?.classList.add("animate-pulse", "border-red-500/60");
+      } else {
+        streakContainer?.classList.remove("animate-pulse", "border-red-500/60");
+      }
+    }
+    if (completedEl) completedEl.textContent = completed.toString();
+    if (totalEl) totalEl.textContent = total.toString();
 
     // Update progress label
     const progressLabel = document.getElementById("progress-label");
@@ -413,19 +678,21 @@ import Icon from "../../components/Icons.astro";
     const progressBar = document.getElementById("progress-bar") as HTMLElement;
     if (progressBar) progressBar.style.width = `${progress}%`;
 
-    // Combo visual feedback
-    const comboEl = document.getElementById("combo");
-    if (combo > 2) {
-      comboEl?.parentElement?.parentElement?.classList.add(
-        "animate-pulse",
-        "scale-110"
-      );
-    } else {
-      comboEl?.parentElement?.parentElement?.classList.remove(
-        "animate-pulse",
-        "scale-110"
-      );
-    }
+    // Update power-up counts
+    const hintCountEl = document.getElementById("hint-count");
+    const freezeCountEl = document.getElementById("freeze-count");
+    const doubleCountEl = document.getElementById("double-count");
+    if (hintCountEl) hintCountEl.textContent = hintsRemaining.toString();
+    if (freezeCountEl) freezeCountEl.textContent = freezeRemaining.toString();
+    if (doubleCountEl) doubleCountEl.textContent = doubleRemaining.toString();
+
+    // Disable power-ups if out of uses
+    const hintBtn = document.getElementById("powerup-hint") as HTMLButtonElement;
+    const freezeBtn = document.getElementById("powerup-freeze") as HTMLButtonElement;
+    const doubleBtn = document.getElementById("powerup-double") as HTMLButtonElement;
+    if (hintBtn) hintBtn.disabled = hintsRemaining === 0;
+    if (freezeBtn) freezeBtn.disabled = freezeRemaining === 0 || isFrozen;
+    if (doubleBtn) doubleBtn.disabled = doubleRemaining === 0 || isDoubleActive;
   }
 
   function initGame() {
@@ -513,12 +780,39 @@ import Icon from "../../components/Icons.astro";
 
         if (temName === correctTem) {
           // Correct!
+          totalMatches++;
+          perfectMatches++;
           correctStreak++;
+          maxStreak = Math.max(maxStreak, correctStreak);
           combo = Math.min(5, Math.floor(correctStreak / 2) + 1);
           maxCombo = Math.max(maxCombo, combo);
 
-          const points = 10 * combo;
+          let basePoints = 10;
+          if (isDoubleActive) {
+            basePoints *= 2;
+            showNotification("Nhân đôi điểm!", "warning", 2000);
+          }
+          const points = basePoints * combo;
           score += points;
+
+          // Emotional feedback based on performance
+          if (combo >= 5 && correctStreak >= 10) {
+            showEmotionalMessage("excellent");
+            createStarBurst(x, y);
+            showNotification("🌟 Xuất sắc! Chuỗi hoàn hảo!", "success", 3000);
+          } else if (combo >= 3 && correctStreak >= 5) {
+            showEmotionalMessage("great");
+            createExplosion(x, y, true, 50);
+            showNotification("🎯 Tuyệt vời! Tiếp tục!", "success", 2000);
+          } else if (correctStreak >= 3) {
+            showEmotionalMessage("good");
+            createExplosion(x, y, true, 40);
+            showNotification("👍 Tốt lắm!", "success", 1500);
+          } else {
+            createExplosion(x, y, true, 30);
+            showNotification("✅ Đúng rồi! +" + points + "đ", "success", 1500);
+          }
+
           completed++;
 
           goodsZone.classList.add(
@@ -528,7 +822,7 @@ import Icon from "../../components/Icons.astro";
             "scale-110"
           );
           goodsZone.querySelector(".status")!.innerHTML =
-            `<span class="text-green-400 font-bold text-lg">✅ +${points}đ!</span>`;
+            `<span class="text-green-400 font-bold text-lg animate-pulse">✅ +${points}đ!</span>`;
 
           // Remove used tem card with animation
           const temCard = document.querySelector(`[data-tem="${temName}"]`);
@@ -537,19 +831,36 @@ import Icon from "../../components/Icons.astro";
             setTimeout(() => temCard.remove(), 400);
           }
 
-          createExplosion(x, y, true);
           playSound("correct");
 
           if (combo > 2) {
             showComboMessage(combo);
           }
 
+          // Special notifications for milestones
+          if (correctStreak === 5) {
+            showNotification("🔥 Chuỗi 5! Tiếp tục phát huy!", "warning", 2500);
+          } else if (correctStreak === 10) {
+            showNotification("⚡ Chuỗi 10! Bạn là chuyên gia!", "warning", 2500);
+          } else if (correctStreak === 15) {
+            showNotification("🌟 Chuỗi 15! Không thể tin được!", "warning", 3000);
+          }
+
           checkLevelComplete();
         } else {
           // Wrong!
+          totalMatches++;
           correctStreak = 0;
           combo = 1;
           score = Math.max(0, score - 5);
+
+          // Show emotional support
+          if (perfectMatches > 0 && perfectMatches / totalMatches > 0.7) {
+            showEmotionalMessage("try_again");
+            showNotification("💪 Không sao! Bạn vẫn làm tốt!", "info", 2000);
+          } else {
+            showNotification("❌ Sai rồi! Hãy thử lại! -5đ", "error", 2000);
+          }
 
           goodsZone.classList.add(
             "bg-red-500/30",
@@ -569,8 +880,15 @@ import Icon from "../../components/Icons.astro";
               '<span class="text-neutral-500">Thử lại...</span>';
           }, 1500);
 
-          createExplosion(x, y, false);
+          createExplosion(x, y, false, 30);
           playSound("wrong");
+
+          // Hint for next attempt
+          if (hintsRemaining > 0 && totalMatches % 3 === 0) {
+            setTimeout(() => {
+              showNotification("💡 Gợi ý: Nhấp vào nút Gợi ý để được trợ giúp!", "info", 3000);
+            }, 2000);
+          }
         }
 
         updateUI();
@@ -622,28 +940,168 @@ import Icon from "../../components/Icons.astro";
 
   function startTimer() {
     timerInterval = window.setInterval(() => {
-      timeLeft--;
-      updateUI();
+      if (!isFrozen) {
+        timeLeft--;
+        updateUI();
 
-      if (timeLeft <= 0) {
-        endGame(false);
-      } else if (timeLeft <= 10) {
-        document
-          .getElementById("timer")!
-          .classList.add("text-red-400", "animate-pulse");
-        if (timeLeft % 2 === 0) playSound("tick");
+        if (timeLeft <= 0) {
+          endGame(false);
+        } else if (timeLeft <= 10) {
+          const timerEl = document.getElementById("timer");
+          if (timerEl) {
+            timerEl.classList.add("text-red-400", "animate-pulse");
+          }
+          if (timeLeft % 2 === 0) playSound("tick");
+          if (timeLeft === 5) {
+            showNotification("⏰ Sắp hết thời gian!", "warning", 2000);
+          }
+        }
+      }
+
+      // Check double points duration
+      if (isDoubleActive && Date.now() >= doubleEndTime) {
+        isDoubleActive = false;
+        showNotification("⏱️ Hết thời gian nhân đôi điểm!", "info", 2000);
       }
     }, 1000);
   }
 
+  // Power-ups functions
+  function useHint() {
+    if (hintsRemaining === 0) return;
+    
+    hintsRemaining--;
+    powerUpUsed = true;
+    updateUI();
+    
+    // Find a random unmatched pair and highlight it
+    const goodsZones = document.querySelectorAll(".goods-zone:not(.pointer-events-none)");
+    const temCards = document.querySelectorAll(".tem-card");
+    
+    if (goodsZones.length > 0 && temCards.length > 0) {
+      const randomGoods = goodsZones[Math.floor(Math.random() * goodsZones.length)] as HTMLElement;
+      const correctTem = randomGoods.dataset.tem;
+      const matchingTem = document.querySelector(`[data-tem="${correctTem}"]`) as HTMLElement;
+      
+      if (matchingTem) {
+        // Highlight matching pair
+        randomGoods.classList.add("hint-glow");
+        matchingTem.classList.add("hint-glow", "animate-pulse");
+        
+        showNotification("💡 Gợi ý: Tem và hàng được làm nổi bật!", "info", 3000);
+        
+        setTimeout(() => {
+          randomGoods.classList.remove("hint-glow");
+          matchingTem.classList.remove("hint-glow", "animate-pulse");
+        }, 3000);
+      }
+    }
+    
+    playSound("hint");
+  }
+
+  function useFreeze() {
+    if (freezeRemaining === 0 || isFrozen) return;
+    
+    freezeRemaining--;
+    isFrozen = true;
+    powerUpUsed = true;
+    updateUI();
+    
+    const freezeBtn = document.getElementById("powerup-freeze") as HTMLButtonElement;
+    if (freezeBtn) {
+      freezeBtn.classList.add("powerup-active");
+    }
+    
+    showNotification("❄️ Đóng băng! Thời gian dừng 5 giây!", "info", 3000);
+    createExplosion(window.innerWidth / 2, window.innerHeight / 2, true, 100);
+    playSound("freeze");
+    
+    setTimeout(() => {
+      isFrozen = false;
+      if (freezeBtn) {
+        freezeBtn.classList.remove("powerup-active");
+      }
+      showNotification("⏰ Thời gian tiếp tục!", "info", 2000);
+    }, 5000);
+  }
+
+  function useDouble() {
+    if (doubleRemaining === 0 || isDoubleActive) return;
+    
+    doubleRemaining--;
+    isDoubleActive = true;
+    doubleEndTime = Date.now() + 10000; // 10 seconds
+    powerUpUsed = true;
+    updateUI();
+    
+    const doubleBtn = document.getElementById("powerup-double") as HTMLButtonElement;
+    if (doubleBtn) {
+      doubleBtn.classList.add("powerup-active");
+    }
+    
+    showNotification("⚡ Nhân đôi điểm trong 10 giây!", "warning", 3000);
+    createStarBurst(window.innerWidth / 2, window.innerHeight / 2);
+    playSound("double");
+    
+    // Visual effect for double points
+    const scoreContainer = document.getElementById("score-container");
+    if (scoreContainer) {
+      scoreContainer.classList.add("animate-glow");
+      setTimeout(() => {
+        scoreContainer.classList.remove("animate-glow");
+      }, 10000);
+    }
+  }
+
   function endGame(won: boolean) {
     if (timerInterval) clearInterval(timerInterval);
+    isFrozen = false;
+    isDoubleActive = false;
 
     document.getElementById("game-board")!.classList.add("hidden");
     document.getElementById("game-over")!.classList.remove("hidden");
-    document.getElementById("final-score")!.textContent = score.toString();
+    
+    const finalScoreEl = document.getElementById("final-score");
+    const finalComboEl = document.getElementById("final-combo");
+    const finalStreakEl = document.getElementById("final-streak");
+    const finalTimeEl = document.getElementById("final-time");
+    const gameOverIconEl = document.getElementById("game-over-icon");
+    const gameOverTitleEl = document.getElementById("game-over-title");
+    const storyMessageEl = document.getElementById("story-message");
 
-    // Add achievements
+    if (finalScoreEl) finalScoreEl.textContent = score.toString();
+    if (finalComboEl) finalComboEl.textContent = `×${maxCombo}`;
+    if (finalStreakEl) finalStreakEl.textContent = maxStreak.toString();
+    if (finalTimeEl) finalTimeEl.textContent = timeLeft.toString() + "s";
+
+    // Update title and icon based on performance
+    if (won) {
+      if (gameOverIconEl) gameOverIconEl.textContent = "🏆";
+      if (gameOverTitleEl) gameOverTitleEl.textContent = "Chiến thắng!";
+      createStarBurst(window.innerWidth / 2, window.innerHeight / 2);
+    } else {
+      if (gameOverIconEl) gameOverIconEl.textContent = "😔";
+      if (gameOverTitleEl) gameOverTitleEl.textContent = "Hết thời gian!";
+    }
+
+    // Story message based on performance
+    const accuracy = totalMatches > 0 ? (perfectMatches / totalMatches * 100).toFixed(0) : 0;
+    let storyMessage = "";
+    
+    if (won && score >= 200 && accuracy >= 80) {
+      storyMessage = `"Trong thời bao cấp, bạn đã trở thành người mua hàng thông minh nhất! Những người như bạn luôn biết cách quản lý tem phiếu hiệu quả, không lãng phí một tờ nào."`;
+    } else if (won) {
+      storyMessage = `"Bạn đã hoàn thành xuất sắc! Trong thời bao cấp, việc có đủ tem phiếu và mua được hàng là niềm hạnh phúc lớn của mỗi gia đình."`;
+    } else if (score >= 150) {
+      storyMessage = `"Bạn đã làm rất tốt! Thời bao cấp đầy khó khăn, nhưng những người kiên trì như bạn luôn tìm được cách vượt qua."`;
+    } else {
+      storyMessage = `"Không sao, hãy thử lại! Trong thời bao cấp, việc xếp hàng và đổi tem phiếu cần sự kiên nhẫn và kỹ năng."`;
+    }
+    
+    if (storyMessageEl) storyMessageEl.textContent = storyMessage;
+
+    // Add achievements with more variety
     const achievements = document.getElementById("achievements")!;
     const badges = [];
 
@@ -665,23 +1123,68 @@ import Icon from "../../components/Icons.astro";
         text: "Điểm cao!",
         color: "from-blue-400 to-cyan-500",
       });
+    if (score >= 300)
+      badges.push({
+        icon: "👑",
+        text: "Bậc thầy!",
+        color: "from-purple-400 to-pink-500",
+      });
     if (level >= 3)
       badges.push({
         icon: "⭐",
         text: "Full cấp",
-        color: "from-purple-400 to-pink-500",
+        color: "from-indigo-400 to-blue-500",
+      });
+    if (maxStreak >= 10)
+      badges.push({
+        icon: "⚡",
+        text: "Chuỗi dài",
+        color: "from-cyan-400 to-teal-500",
+      });
+    if (accuracy >= 90 && totalMatches >= 10)
+      badges.push({
+        icon: "🎯",
+        text: "Độ chính xác",
+        color: "from-green-400 to-emerald-500",
+      });
+    if (timeLeft >= 30 && won)
+      badges.push({
+        icon: "⏱️",
+        text: "Tốc độ",
+        color: "from-orange-400 to-red-500",
+      });
+    if (powerUpUsed)
+      badges.push({
+        icon: "✨",
+        text: "Sử dụng Power-up",
+        color: "from-pink-400 to-rose-500",
+      });
+    if (!powerUpUsed && won)
+      badges.push({
+        icon: "🛡️",
+        text: "Không dùng Power-up",
+        color: "from-gray-400 to-slate-500",
       });
 
     achievements.innerHTML = badges
       .map(
         (b) => `
-      <div class="px-6 py-3 bg-gradient-to-r ${b.color} rounded-full text-white font-bold shadow-xl flex items-center gap-2">
+      <div class="px-6 py-3 bg-gradient-to-r ${b.color} rounded-full text-white font-bold shadow-xl flex items-center gap-2 animate-pulse-scale">
         <span class="text-2xl">${b.icon}</span>
         <span>${b.text}</span>
       </div>
     `
       )
       .join("");
+
+    if (badges.length === 0) {
+      achievements.innerHTML = `
+        <div class="px-6 py-3 bg-gradient-to-r from-gray-400 to-slate-500 rounded-full text-white font-bold shadow-xl flex items-center gap-2">
+          <span class="text-2xl">💪</span>
+          <span>Cố gắng lần sau!</span>
+        </div>
+      `;
+    }
 
     playSound(won ? "victory" : "gameover");
   }
@@ -695,8 +1198,27 @@ import Icon from "../../components/Icons.astro";
   document.getElementById("start-game")?.addEventListener("click", () => {
     document.getElementById("instructions")!.classList.add("hidden");
     document.getElementById("game-board")!.classList.remove("hidden");
+    document.getElementById("powerups-bar")!.classList.remove("hidden");
+    score = 0;
+    level = 1;
+    timeLeft = 60;
+    completed = 0;
+    combo = 1;
+    maxCombo = 1;
+    correctStreak = 0;
+    maxStreak = 0;
+    hintsRemaining = 3;
+    freezeRemaining = 2;
+    doubleRemaining = 1;
+    isFrozen = false;
+    isDoubleActive = false;
+    perfectMatches = 0;
+    totalMatches = 0;
+    powerUpUsed = false;
+    gameStartTime = Date.now();
     initGame();
     startTimer();
+    showNotification("🎮 Bắt đầu! Chúc may mắn!", "info", 2000);
     playSound("start");
   });
 
@@ -708,10 +1230,25 @@ import Icon from "../../components/Icons.astro";
     combo = 1;
     maxCombo = 1;
     correctStreak = 0;
+    maxStreak = 0;
+    hintsRemaining = 3;
+    freezeRemaining = 2;
+    doubleRemaining = 1;
+    isFrozen = false;
+    isDoubleActive = false;
+    perfectMatches = 0;
+    totalMatches = 0;
+    powerUpUsed = false;
     document.getElementById("game-over")!.classList.add("hidden");
     document.getElementById("instructions")!.classList.remove("hidden");
+    document.getElementById("powerups-bar")!.classList.add("hidden");
     updateUI();
   });
+
+  // Power-up event listeners
+  document.getElementById("powerup-hint")?.addEventListener("click", useHint);
+  document.getElementById("powerup-freeze")?.addEventListener("click", useFreeze);
+  document.getElementById("powerup-double")?.addEventListener("click", useDouble);
 
   updateUI();
 </script>

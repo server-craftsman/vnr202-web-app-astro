@@ -430,19 +430,27 @@ import ambienceAudio from "../assets/music-for-victory-parade.mp3";
           ) {
             audio.currentTime = state.currentTime;
           }
-          // Try to resume if it was playing (immediately, no delay, no waiting)
+          // Try to resume if it was playing (immediately, ABSOLUTE NO DELAY)
           if (state.isPlaying) {
-            // Resume immediately - ensure it keeps playing
-            if (audio.paused) {
-              audio.play().catch(() => {
-                // Auto-play might be blocked, but that's okay
-                // User can manually resume by clicking the button
-              });
-            }
-            // Double-check: ensure it's playing
-            if (audio.paused) {
-              audio.play().catch(() => {});
-            }
+            // Resume IMMEDIATELY - play multiple times to ensure it works
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+            
+            // Use setTimeout(0) to ensure it plays after any blocking
+            setTimeout(() => {
+              if (audio.paused && state.isPlaying) {
+                audio.play().catch(() => {});
+              }
+            }, 0);
+            
+            // Also use requestAnimationFrame
+            requestAnimationFrame(() => {
+              if (audio.paused && state.isPlaying) {
+                audio.play().catch(() => {});
+              }
+            });
+            
             // Update state immediately
             isPlaying = !audio.paused;
             // Update UI to reflect actual state immediately
@@ -450,9 +458,11 @@ import ambienceAudio from "../assets/music-for-victory-parade.mp3";
               updateUI();
             }
 
-            // Continuous monitoring for this page to ensure it keeps playing
+            // Continuous monitoring for this page - VERY AGGRESSIVE
             const monitorInterval = setInterval(() => {
               if (audio.paused && state.isPlaying) {
+                // Try multiple times
+                audio.play().catch(() => {});
                 audio.play().catch(() => {});
               }
               // Stop if user pauses manually (state changed)
@@ -467,7 +477,7 @@ import ambienceAudio from "../assets/music-for-victory-parade.mp3";
                   clearInterval(monitorInterval);
                 }
               }
-            }, 100); // Check every 100ms
+            }, 10); // Check every 10ms for maximum responsiveness
           }
         } catch (e) {
           console.log("Could not restore audio state:", e);
@@ -559,7 +569,16 @@ import ambienceAudio from "../assets/music-for-victory-parade.mp3";
 
     // Toggle play/pause
     if (isPlaying) {
-      // Pause audio
+      // Pause audio - but only if user explicitly wants to pause
+      // Update state first to allow pause
+      const currentState = localStorage.getItem(AUDIO_KEY);
+      if (currentState) {
+        try {
+          const state = JSON.parse(currentState);
+          state.isPlaying = false;
+          localStorage.setItem(AUDIO_KEY, JSON.stringify(state));
+        } catch (e) {}
+      }
       audio.pause();
       volumeOn?.classList.add("hidden");
       volumeOff?.classList.remove("hidden");

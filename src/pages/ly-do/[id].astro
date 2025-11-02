@@ -170,4 +170,26 @@ const relatedReasons = baoCapReasons
       }
     </div>
   </main>
+
+  <script is:inline>
+    // Immediately resume audio when page loads (BEFORE astro:page-load)
+    (function () {
+      const AUDIO_KEY = "baocap_audio_state";
+      const audio = window.__baocapAudio__;
+      if (audio) {
+        const savedState = localStorage.getItem(AUDIO_KEY);
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            if (state.isPlaying && audio.paused) {
+              // Resume IMMEDIATELY - NO DELAY
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+            }
+          } catch (e) {}
+        }
+      }
+    })();
+  </script>
 </Layout>

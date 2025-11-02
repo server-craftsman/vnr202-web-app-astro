@@ -102,7 +102,25 @@ import { ViewTransitions } from "astro:transitions";
       // Store globally to survive navigation
       window.__baocapAudio__ = audio;
 
-      // Prevent audio from being paused during transitions
+      // CRITICAL: Override pause method to prevent audio from ever pausing if it should be playing
+      const originalPause = audio.pause.bind(audio);
+      audio.pause = function () {
+        const savedState = localStorage.getItem(AUDIO_KEY);
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            // If audio should be playing, prevent pause
+            if (state.isPlaying) {
+              // Don't pause - just return immediately
+              return;
+            }
+          } catch (e) {}
+        }
+        // Only pause if user explicitly wants to pause (state.isPlaying = false)
+        return originalPause();
+      };
+
+      // Also add event listener as backup
       audio.addEventListener(
         "pause",
         (e) => {
@@ -110,15 +128,19 @@ import { ViewTransitions } from "astro:transitions";
           if (savedState) {
             try {
               const state = JSON.parse(savedState);
-              // If audio was playing and got paused, resume immediately
+              // If audio was playing and got paused, resume IMMEDIATELY - NO DELAY
               if (state.isPlaying && audio.paused) {
-                // Resume immediately without delay
+                // Resume immediately - use setTimeout with 0 delay to ensure it happens
+                setTimeout(() => {
+                  audio.play().catch(() => {});
+                }, 0);
+                // Also try immediately
                 audio.play().catch(() => {});
               }
             } catch (e) {}
           }
         },
-        { passive: true }
+        { passive: false, capture: true }
       );
 
       // Restore state from localStorage
@@ -214,44 +236,117 @@ import { ViewTransitions } from "astro:transitions";
     document.addEventListener("astro:before-preparation", () => {
       // Save state right before page transition
       const audio = window.__baocapAudio__;
-      if (audio && !audio.paused) {
-        saveAudioState();
-        // CRITICAL: Prevent audio from pausing during transition
-        // Add listener to immediately resume if paused
-        const preventPause = () => {
-          if (!audio.paused) {
-            // Audio is still playing - save current state
-            saveAudioState();
-          } else {
-            // Audio was paused - resume immediately
-            const savedState = localStorage.getItem(AUDIO_KEY);
-            if (savedState) {
-              try {
-                const state = JSON.parse(savedState);
-                if (state.isPlaying) {
+      if (audio) {
+        const savedState = localStorage.getItem(AUDIO_KEY);
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            if (state.isPlaying) {
+              // CRITICAL: Ensure audio continues playing DURING transition
+              // Don't let it pause at all
+              if (audio.paused) {
+                // Resume immediately before transition starts
+                audio.currentTime = state.currentTime || audio.currentTime;
+                audio.play().catch(() => {});
+              }
+
+              // Add aggressive listener to prevent ANY pause during transition
+              const preventPauseDuringTransition = () => {
+                if (state.isPlaying && audio.paused) {
+                  // Resume immediately - no delay, no checks
                   audio.currentTime = state.currentTime || audio.currentTime;
                   audio.play().catch(() => {});
+                  // Double-check
+                  if (audio.paused) {
+                    audio.play().catch(() => {});
+                  }
                 }
-              } catch (e) {}
+              };
+
+              // Listen in capture phase to catch pause events early
+              audio.addEventListener("pause", preventPauseDuringTransition, {
+                passive: false,
+                capture: true,
+                once: false, // Keep listening during entire transition
+              });
+
+              // Also monitor continuously during transition
+              const monitorInterval = setInterval(() => {
+                if (state.isPlaying && audio.paused) {
+                  audio.play().catch(() => {});
+                }
+              }, 50); // Check every 50ms during transition
+
+              // Stop monitoring after transition completes
+              document.addEventListener(
+                "astro:page-load",
+                () => {
+                  clearInterval(monitorInterval);
+                  audio.removeEventListener(
+                    "pause",
+                    preventPauseDuringTransition,
+                    { capture: true }
+                  );
+                },
+                { once: true }
+              );
             }
-          }
-        };
-
-        // Listen for pause events and immediately resume
-        audio.addEventListener("pause", preventPause, { passive: true });
-
-        // Also check immediately before transition
-        if (audio.paused) {
-          preventPause();
+          } catch (e) {}
         }
+
+        // Save current state
+        saveAudioState();
       }
     });
 
+    // Resume audio IMMEDIATELY when page loads (BEFORE astro:page-load)
+    function immediateAudioResume() {
+      const audio = window.__baocapAudio__;
+      if (!audio) return;
+
+      const savedState = localStorage.getItem(AUDIO_KEY);
+      if (savedState) {
+        try {
+          const state = JSON.parse(savedState);
+
+          // Restore volume immediately
+          audio.volume = state.volume || 0.7;
+
+          // CRITICAL: If it was playing, resume IMMEDIATELY - ABSOLUTE NO DELAY
+          if (state.isPlaying) {
+            // Play immediately - NO conditions, NO checks, NO delays
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+
+            // Also restore current time immediately if valid
+            if (
+              state.currentTime &&
+              audio.duration > 0 &&
+              Math.abs(audio.currentTime - state.currentTime) > 0.5
+            ) {
+              audio.currentTime = state.currentTime;
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    // Call IMMEDIATELY when DOM is ready (before View Transitions)
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", immediateAudioResume, {
+        once: true,
+      });
+    } else {
+      immediateAudioResume();
+    }
+
+    // Also call on astro:page-load for redundancy
     document.addEventListener("astro:page-load", () => {
       const audio = window.__baocapAudio__;
       if (!audio) return;
 
-      // IMMEDIATELY restore audio - NO DELAY, NO WAITING
+      // IMMEDIATELY restore audio - ABSOLUTE NO DELAY, NO WAITING
       const savedState = localStorage.getItem(AUDIO_KEY);
       if (savedState) {
         try {
@@ -261,25 +356,33 @@ import { ViewTransitions } from "astro:transitions";
           audio.volume = state.volume || 0.7;
 
           // Restore current time immediately if valid
-          if (state.currentTime && audio.duration > 0) {
+          if (
+            state.currentTime &&
+            audio.duration > 0 &&
+            Math.abs(audio.currentTime - state.currentTime) > 0.5
+          ) {
             audio.currentTime = state.currentTime;
           }
 
-          // CRITICAL: If it was playing, resume IMMEDIATELY - NO DELAY, NO CHECKS
+          // CRITICAL: If it was playing, resume IMMEDIATELY - ABSOLUTE NO DELAY
           if (state.isPlaying) {
-            // Play immediately - don't wait for anything
-            audio.play().catch(() => {
-              // Auto-play might be blocked, but try anyway
-            });
+            // Play immediately - NO conditions, NO checks, NO delays
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
 
-            // Double-check: ensure it's playing
-            if (audio.paused) {
-              audio.play().catch(() => {});
-            }
-
-            // Triple-check after microtask
+            // Immediate double-check after microtask
             Promise.resolve().then(() => {
               if (audio.paused && state.isPlaying) {
+                audio.play().catch(() => {});
+                audio.play().catch(() => {});
+              }
+            });
+
+            // Also check after next frame
+            requestAnimationFrame(() => {
+              if (audio.paused && state.isPlaying) {
+                audio.play().catch(() => {});
                 audio.play().catch(() => {});
               }
             });
@@ -383,17 +486,57 @@ import { ViewTransitions } from "astro:transitions";
           return; // Skip links that should open in new window
         }
 
-        // Ensure audio continues playing during transition
-        // Astro automatically handles View Transitions for internal links
-        // We just ensure audio state is saved before navigation
+        // CRITICAL: Ensure audio continues playing during transition
+        // Save audio state and prevent pause during navigation
         const audio = window.__baocapAudio__;
-        if (audio && !audio.paused) {
+        if (audio) {
+          const wasPlaying = !audio.paused;
+          const currentTime = audio.currentTime;
+          const volume = audio.volume;
+
+          // Save state immediately
           const state = {
-            isPlaying: true,
-            volume: audio.volume,
-            currentTime: audio.currentTime,
+            isPlaying: wasPlaying,
+            volume: volume,
+            currentTime: currentTime,
           };
           localStorage.setItem("baocap_audio_state", JSON.stringify(state));
+
+          // If audio was playing, ensure it continues during navigation
+          if (wasPlaying) {
+            // Add listener to prevent pause during navigation
+            const preventPauseOnNav = () => {
+              if (wasPlaying && audio.paused) {
+                audio.currentTime = currentTime;
+                audio.play().catch(() => {});
+              }
+            };
+
+            audio.addEventListener("pause", preventPauseOnNav, {
+              once: true,
+              capture: true,
+            });
+
+            // Also monitor continuously during navigation
+            const navMonitor = setInterval(() => {
+              if (wasPlaying && audio.paused) {
+                audio.currentTime = currentTime;
+                audio.play().catch(() => {});
+              }
+            }, 30); // Check every 30ms during navigation
+
+            // Stop monitoring after navigation completes
+            document.addEventListener(
+              "astro:page-load",
+              () => {
+                clearInterval(navMonitor);
+                audio.removeEventListener("pause", preventPauseOnNav, {
+                  capture: true,
+                });
+              },
+              { once: true }
+            );
+          }
         }
 
         // Let Astro handle View Transitions - don't prevent default for internal links

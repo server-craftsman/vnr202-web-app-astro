@@ -930,3 +930,23 @@ const storeItems = [
     }
   }, 3000);
 </script>
+
+<script is:inline>
+  (function () {
+    const AUDIO_KEY = "baocap_audio_state";
+    const audio = window.__baocapAudio__;
+    if (audio) {
+      const savedState = localStorage.getItem(AUDIO_KEY);
+      if (savedState) {
+        try {
+          const state = JSON.parse(savedState);
+          if (state.isPlaying && audio.paused) {
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+          }
+        } catch (e) {}
+      }
+    }
+  })();
+</script>

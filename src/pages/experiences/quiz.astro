@@ -155,39 +155,104 @@ import { quizQuestions } from "../../data/quiz";
 </Layout>
 
 <script define:vars={{ quizQuestions }}>
-  let currentQuestion = 0;
-  let correctAnswers = 0;
-  let score = 0;
-  let answered = false;
-
-  const quizContainer = document.getElementById("quiz-container");
-  const resultScreen = document.getElementById("result-screen");
-
-  function renderQuestion() {
-    if (currentQuestion >= quizQuestions.length) {
-      showResult();
+  (function () {
+    if (!quizQuestions || quizQuestions.length === 0) {
+      console.error("Quiz questions not loaded");
       return;
     }
 
-    const q = quizQuestions[currentQuestion];
-    answered = false;
+    let currentQuestion = 0;
+    let correctAnswers = 0;
+    let score = 0;
+    let answered = false;
 
-    // Update stats
-    document.getElementById("current-q")?.textContent = (
-      currentQuestion + 1
-    ).toString();
-    document.getElementById("total-q")?.textContent =
-      quizQuestions.length.toString();
+    const quizContainer = document.getElementById("quiz-container");
+    const resultScreen = document.getElementById("result-screen");
 
-    if (quizContainer) {
+    if (!quizContainer || !resultScreen) {
+      console.error("Quiz container or result screen not found");
+      return;
+    }
+
+    function getDifficultyClass(difficulty) {
+      switch (difficulty) {
+        case "easy":
+          return {
+            bg: "bg-green-500/20",
+            border: "border-green-500/40",
+            text: "text-green-300",
+            label: "⭐ Dễ",
+          };
+        case "medium":
+          return {
+            bg: "bg-yellow-500/20",
+            border: "border-yellow-500/40",
+            text: "text-yellow-300",
+            label: "⭐⭐ Trung bình",
+          };
+        case "hard":
+          return {
+            bg: "bg-red-500/20",
+            border: "border-red-500/40",
+            text: "text-red-300",
+            label: "⭐⭐⭐ Khó",
+          };
+        default:
+          return {
+            bg: "bg-indigo-500/20",
+            border: "border-indigo-500/40",
+            text: "text-indigo-300",
+            label: "⭐",
+          };
+      }
+    }
+
+    function getCategoryLabel(category) {
+      switch (category) {
+        case "history":
+          return "📚 Lịch sử";
+        case "economy":
+          return "💰 Kinh tế";
+        case "culture":
+          return "🎭 Văn hóa";
+        case "society":
+          return "👥 Xã hội";
+        default:
+          return "📖 Kiến thức";
+      }
+    }
+
+    function renderQuestion() {
+      if (currentQuestion >= quizQuestions.length) {
+        showResult();
+        return;
+      }
+
+      const q = quizQuestions[currentQuestion];
+      if (!q) {
+        console.error("Question not found at index:", currentQuestion);
+        return;
+      }
+
+      answered = false;
+
+      // Update stats
+      const currentQEl = document.getElementById("current-q");
+      const totalQEl = document.getElementById("total-q");
+      if (currentQEl) currentQEl.textContent = (currentQuestion + 1).toString();
+      if (totalQEl) totalQEl.textContent = quizQuestions.length.toString();
+
+      const difficultyClass = getDifficultyClass(q.difficulty);
+      const categoryLabel = getCategoryLabel(q.category);
+
       quizContainer.innerHTML = `
         <div class="mb-8">
-          <div class="flex items-center justify-between mb-4">
-            <span class="px-4 py-2 bg-indigo-500/20 border border-indigo-500/40 rounded-full text-indigo-300 text-sm font-semibold capitalize">
-              ${q.category === "history" ? "📚 Lịch sử" : q.category === "economy" ? "💰 Kinh tế" : q.category === "culture" ? "🎭 Văn hóa" : "👥 Xã hội"}
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <span class="px-4 py-2 bg-indigo-500/20 border border-indigo-500/40 rounded-full text-indigo-300 text-sm font-semibold">
+              ${categoryLabel}
             </span>
-            <span class="px-4 py-2 bg-${q.difficulty === "easy" ? "green" : q.difficulty === "medium" ? "yellow" : "red"}-500/20 border border-${q.difficulty === "easy" ? "green" : q.difficulty === "medium" ? "yellow" : "red"}-500/40 rounded-full text-${q.difficulty === "easy" ? "green" : q.difficulty === "medium" ? "yellow" : "red"}-300 text-sm font-semibold">
-              ${q.difficulty === "easy" ? "⭐ Dễ" : q.difficulty === "medium" ? "⭐⭐ Trung bình" : "⭐⭐⭐ Khó"}
+            <span class="px-4 py-2 ${difficultyClass.bg} border ${difficultyClass.border} rounded-full ${difficultyClass.text} text-sm font-semibold">
+              ${difficultyClass.label}
             </span>
           </div>
           <h3 class="text-2xl md:text-3xl font-bold text-white mb-8 leading-relaxed">
@@ -195,16 +260,16 @@ import { quizQuestions } from "../../data/quiz";
           </h3>
         </div>
 
-        <div class="space-y-4">
+        <div class="space-y-4" id="options-container">
           ${q.options
             .map(
               (option, index) => `
-            <button class="option-btn w-full text-left p-6 bg-stone-900/50 border-2 border-neutral-700 rounded-2xl hover:border-indigo-500/50 hover:bg-stone-800/50 transition-all group" data-index="${index}">
+            <button class="option-btn w-full text-left p-6 bg-stone-900/50 border-2 border-neutral-700 rounded-2xl hover:border-indigo-500/50 hover:bg-stone-800/50 transition-all group cursor-pointer" data-index="${index}">
               <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-neutral-800 border-2 border-neutral-700 rounded-xl flex items-center justify-center text-neutral-400 font-bold group-hover:border-indigo-500 group-hover:text-indigo-300 transition-colors">
+                <div class="w-10 h-10 bg-neutral-800 border-2 border-neutral-700 rounded-xl flex items-center justify-center text-neutral-400 font-bold group-hover:border-indigo-500 group-hover:text-indigo-300 transition-colors flex-shrink-0">
                   ${String.fromCharCode(65 + index)}
                 </div>
-                <span class="text-lg text-neutral-200 group-hover:text-white transition-colors">${option}</span>
+                <span class="text-lg text-neutral-200 group-hover:text-white transition-colors flex-1">${option}</span>
               </div>
             </button>
           `
@@ -226,145 +291,215 @@ import { quizQuestions } from "../../data/quiz";
 
       // Add event listeners
       document.querySelectorAll(".option-btn").forEach((btn) => {
-        btn.addEventListener("click", () =>
-          handleAnswer(parseInt(btn.dataset.index || "0"))
-        );
+        btn.addEventListener("click", function () {
+          const index = parseInt(this.getAttribute("data-index") || "0");
+          handleAnswer(index);
+        });
       });
 
-      document
-        .getElementById("next-btn")
-        ?.addEventListener("click", nextQuestion);
-    }
-  }
-
-  function handleAnswer(selectedIndex) {
-    if (answered) return;
-    answered = true;
-
-    const q = quizQuestions[currentQuestion];
-    const isCorrect = selectedIndex === q.correctAnswer;
-    const options = document.querySelectorAll(".option-btn");
-    const explanationEl = document.getElementById("explanation");
-    const nextBtn = document.getElementById("next-btn");
-
-    // Disable all options
-    options.forEach((opt, idx) => {
-      opt.classList.add("pointer-events-none");
-
-      if (idx === q.correctAnswer) {
-        opt.classList.remove("border-neutral-700");
-        opt.classList.add("border-green-500", "bg-green-500/20");
-      } else if (idx === selectedIndex && !isCorrect) {
-        opt.classList.remove("border-neutral-700");
-        opt.classList.add("border-red-500", "bg-red-500/20");
+      const nextBtn = document.getElementById("next-btn");
+      if (nextBtn) {
+        nextBtn.addEventListener("click", nextQuestion);
       }
-    });
-
-    // Update score
-    if (isCorrect) {
-      correctAnswers++;
-      const points =
-        q.difficulty === "easy" ? 5 : q.difficulty === "medium" ? 10 : 15;
-      score += points;
-      document.getElementById("correct")?.textContent =
-        correctAnswers.toString();
-      document.getElementById("score")?.textContent = score.toString();
     }
 
-    // Show explanation
-    if (explanationEl) {
-      explanationEl.classList.remove("hidden");
-      explanationEl.className = `mt-8 p-6 rounded-2xl border-2 ${isCorrect ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`;
-      explanationEl.innerHTML = `
-        <div class="flex items-start gap-4">
-          <svg class="w-6 h-6 flex-shrink-0 ${isCorrect ? "text-green-400" : "text-red-400"}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            ${isCorrect ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
-          </svg>
-          <div class="flex-1">
-            <div class="font-bold ${isCorrect ? "text-green-300" : "text-red-300"} mb-2 text-lg">
-              ${isCorrect ? "✅ Chính xác!" : "❌ Chưa đúng"}
+    function handleAnswer(selectedIndex) {
+      if (answered) return;
+
+      const q = quizQuestions[currentQuestion];
+      if (!q) {
+        console.error("Question not found");
+        return;
+      }
+
+      answered = true;
+
+      const isCorrect = selectedIndex === q.correctAnswer;
+      const options = document.querySelectorAll(".option-btn");
+      const explanationEl = document.getElementById("explanation");
+      const nextBtn = document.getElementById("next-btn");
+
+      // Disable all options
+      options.forEach((opt, idx) => {
+        opt.classList.add("pointer-events-none", "cursor-not-allowed");
+
+        if (idx === q.correctAnswer) {
+          opt.classList.remove(
+            "border-neutral-700",
+            "hover:border-indigo-500/50",
+            "hover:bg-stone-800/50"
+          );
+          opt.classList.add("border-green-500", "bg-green-500/20");
+          const letterEl = opt.querySelector("div div");
+          if (letterEl) {
+            letterEl.classList.remove(
+              "border-neutral-700",
+              "text-neutral-400",
+              "group-hover:border-indigo-500",
+              "group-hover:text-indigo-300"
+            );
+            letterEl.classList.add(
+              "border-green-500",
+              "text-green-300",
+              "bg-green-500/30"
+            );
+          }
+        } else if (idx === selectedIndex && !isCorrect) {
+          opt.classList.remove(
+            "border-neutral-700",
+            "hover:border-indigo-500/50",
+            "hover:bg-stone-800/50"
+          );
+          opt.classList.add("border-red-500", "bg-red-500/20");
+          const letterEl = opt.querySelector("div div");
+          if (letterEl) {
+            letterEl.classList.remove(
+              "border-neutral-700",
+              "text-neutral-400",
+              "group-hover:border-indigo-500",
+              "group-hover:text-indigo-300"
+            );
+            letterEl.classList.add(
+              "border-red-500",
+              "text-red-300",
+              "bg-red-500/30"
+            );
+          }
+        } else {
+          opt.classList.add("opacity-50");
+        }
+      });
+
+      // Update score
+      if (isCorrect) {
+        correctAnswers++;
+        const points =
+          q.difficulty === "easy" ? 5 : q.difficulty === "medium" ? 10 : 15;
+        score += points;
+
+        const correctEl = document.getElementById("correct");
+        const scoreEl = document.getElementById("score");
+        if (correctEl) correctEl.textContent = correctAnswers.toString();
+        if (scoreEl) scoreEl.textContent = score.toString();
+      }
+
+      // Show explanation
+      if (explanationEl) {
+        explanationEl.classList.remove("hidden");
+        explanationEl.className = `mt-8 p-6 rounded-2xl border-2 ${isCorrect ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`;
+        explanationEl.innerHTML = `
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-8 h-8 ${isCorrect ? "bg-green-500/30" : "bg-red-500/30"} rounded-full flex items-center justify-center">
+              <svg class="w-5 h-5 ${isCorrect ? "text-green-400" : "text-red-400"}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${isCorrect ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
+              </svg>
             </div>
-            <p class="text-neutral-200 leading-relaxed">
-              ${q.explanation}
-            </p>
+            <div class="flex-1">
+              <div class="font-bold ${isCorrect ? "text-green-300" : "text-red-300"} mb-2 text-lg">
+                ${isCorrect ? "✅ Chính xác!" : "❌ Chưa đúng"}
+              </div>
+              <p class="text-neutral-200 leading-relaxed">
+                ${q.explanation}
+              </p>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
+
+      // Show next button
+      if (nextBtn) {
+        nextBtn.classList.remove("hidden");
+      }
     }
 
-    // Show next button
-    nextBtn?.classList.remove("hidden");
-  }
+    function nextQuestion() {
+      currentQuestion++;
+      renderQuestion();
+    }
 
-  function nextQuestion() {
-    currentQuestion++;
-    renderQuestion();
-  }
+    function showResult() {
+      quizContainer.classList.add("hidden");
+      const statsEl = document.getElementById("quiz-stats");
+      if (statsEl) statsEl.classList.add("hidden");
+      resultScreen.classList.remove("hidden");
 
-  function showResult() {
-    quizContainer?.classList.add("hidden");
-    document.getElementById("quiz-stats")?.classList.add("hidden");
-    resultScreen?.classList.remove("hidden");
+      const maxScore = quizQuestions.reduce(
+        (sum, q) =>
+          sum +
+          (q.difficulty === "easy" ? 5 : q.difficulty === "medium" ? 10 : 15),
+        0
+      );
+      const percentage = Math.round((score / maxScore) * 100);
 
-    const maxScore = quizQuestions.reduce(
-      (sum, q) =>
-        sum +
-        (q.difficulty === "easy" ? 5 : q.difficulty === "medium" ? 10 : 15),
-      0
-    );
-    const percentage = Math.round((score / maxScore) * 100);
+      const finalScoreEl = document.getElementById("final-score");
+      const maxScoreEl = document.getElementById("max-score");
+      const finalCorrectEl = document.getElementById("final-correct");
+      const finalTotalEl = document.getElementById("final-total");
 
-    document.getElementById("final-score")?.textContent = score.toString();
-    document.getElementById("max-score")?.textContent = maxScore.toString();
-    document.getElementById("final-correct")?.textContent =
-      correctAnswers.toString();
-    document.getElementById("final-total")?.textContent =
-      quizQuestions.length.toString();
+      if (finalScoreEl) finalScoreEl.textContent = score.toString();
+      if (maxScoreEl) maxScoreEl.textContent = maxScore.toString();
+      if (finalCorrectEl)
+        finalCorrectEl.textContent = correctAnswers.toString();
+      if (finalTotalEl)
+        finalTotalEl.textContent = quizQuestions.length.toString();
 
-    let icon, title, rating;
-    if (percentage >= 90) {
-      icon = "🏆";
-      title = "Xuất sắc!";
-      rating = "Bạn là chuyên gia về lịch sử thời bao cấp!";
-    } else if (percentage >= 70) {
-      icon = "🎉";
-      title = "Giỏi lắm!";
-      rating = "Bạn có kiến thức tốt về giai đoạn này.";
-    } else if (percentage >= 50) {
-      icon = "👍";
-      title = "Khá đấy!";
-      rating = "Bạn đã nắm được những kiến thức cơ bản.";
+      let icon, title, rating;
+      if (percentage >= 90) {
+        icon = "🏆";
+        title = "Xuất sắc!";
+        rating = "Bạn là chuyên gia về lịch sử thời bao cấp!";
+      } else if (percentage >= 70) {
+        icon = "🎉";
+        title = "Giỏi lắm!";
+        rating = "Bạn có kiến thức tốt về giai đoạn này.";
+      } else if (percentage >= 50) {
+        icon = "👍";
+        title = "Khá đấy!";
+        rating = "Bạn đã nắm được những kiến thức cơ bản.";
+      } else {
+        icon = "📚";
+        title = "Cố gắng thêm nhé!";
+        rating = "Hãy tìm hiểu thêm về lịch sử để làm tốt hơn.";
+      }
+
+      const resultIconEl = document.getElementById("result-icon");
+      const resultTitleEl = document.getElementById("result-title");
+      const ratingTextEl = document.getElementById("rating-text");
+
+      if (resultIconEl) resultIconEl.textContent = icon;
+      if (resultTitleEl) resultTitleEl.textContent = title;
+      if (ratingTextEl) ratingTextEl.textContent = rating;
+    }
+
+    function restartQuiz() {
+      currentQuestion = 0;
+      correctAnswers = 0;
+      score = 0;
+      answered = false;
+
+      const correctEl = document.getElementById("correct");
+      const scoreEl = document.getElementById("score");
+      if (correctEl) correctEl.textContent = "0";
+      if (scoreEl) scoreEl.textContent = "0";
+
+      quizContainer.classList.remove("hidden");
+      const statsEl = document.getElementById("quiz-stats");
+      if (statsEl) statsEl.classList.remove("hidden");
+      resultScreen.classList.add("hidden");
+
+      renderQuestion();
+    }
+
+    const restartBtn = document.getElementById("restart-quiz");
+    if (restartBtn) {
+      restartBtn.addEventListener("click", restartQuiz);
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", renderQuestion);
     } else {
-      icon = "📚";
-      title = "Cố gắng thêm nhé!";
-      rating = "Hãy tìm hiểu thêm về lịch sử để làm tốt hơn.";
+      renderQuestion();
     }
-
-    document.getElementById("result-icon")?.textContent = icon;
-    document.getElementById("result-title")?.textContent = title;
-    document.getElementById("rating-text")?.textContent = rating;
-  }
-
-  function restartQuiz() {
-    currentQuestion = 0;
-    correctAnswers = 0;
-    score = 0;
-    answered = false;
-
-    document.getElementById("correct")?.textContent = "0";
-    document.getElementById("score")?.textContent = "0";
-
-    quizContainer?.classList.remove("hidden");
-    document.getElementById("quiz-stats")?.classList.remove("hidden");
-    resultScreen?.classList.add("hidden");
-
-    renderQuestion();
-  }
-
-  document
-    .getElementById("restart-quiz")
-    ?.addEventListener("click", restartQuiz);
-
-  // Initialize
-  renderQuestion();
+  })();
 </script>

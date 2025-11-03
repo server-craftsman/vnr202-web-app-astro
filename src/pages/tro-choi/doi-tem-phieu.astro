@@ -511,6 +511,22 @@ import Icon from "../../components/Icons.astro";
     animation: glow 1s ease-in-out infinite;
     border-color: #60a5fa !important;
     background: rgba(96, 165, 250, 0.2) !important;
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+  }
+
+  @keyframes hint-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 20px rgba(59, 130, 246, 0);
+    }
+  }
+
+  .hint-glow {
+    animation: hint-pulse 1.5s ease-in-out infinite;
   }
 </style>
 
@@ -1091,46 +1107,238 @@ import Icon from "../../components/Icons.astro";
 
   // Power-ups functions
   function useHint() {
-    if (hintsRemaining === 0) return;
+    if (hintsRemaining === 0) {
+      showNotification("❌ Bạn đã hết gợi ý!", "error", 2000);
+      return;
+    }
+
+    // Find all unmatched goods zones
+    const goodsZones = Array.from(
+      document.querySelectorAll(".goods-zone:not(.pointer-events-none)")
+    ) as HTMLElement[];
+    const temCards = Array.from(
+      document.querySelectorAll(".tem-card")
+    ) as HTMLElement[];
+
+    if (goodsZones.length === 0) {
+      showNotification("✅ Tất cả đã được ghép đúng!", "success", 2000);
+      return;
+    }
+
+    if (temCards.length === 0) {
+      showNotification("❌ Không còn tem phiếu nào!", "error", 2000);
+      return;
+    }
+
+    // Find all valid matches (goods with matching tem cards still available)
+    const validMatches: Array<{ goods: HTMLElement; tem: HTMLElement }> = [];
+
+    goodsZones.forEach((goodsZone) => {
+      const correctTemName = goodsZone.dataset.tem;
+      if (!correctTemName) return;
+
+      // Find matching tem card that still exists
+      const matchingTemCard = temCards.find(
+        (card) => card.dataset.tem === correctTemName
+      );
+
+      if (matchingTemCard) {
+        validMatches.push({ goods: goodsZone, tem: matchingTemCard });
+      }
+    });
+
+    if (validMatches.length === 0) {
+      showNotification("❌ Không tìm thấy cặp nào còn lại!", "error", 2000);
+      return;
+    }
+
+    // Select a random valid match
+    const randomMatch =
+      validMatches[Math.floor(Math.random() * validMatches.length)];
 
     hintsRemaining--;
     powerUpUsed = true;
     updateUI();
 
-    // Find a random unmatched pair and highlight it
-    const goodsZones = document.querySelectorAll(
-      ".goods-zone:not(.pointer-events-none)"
+    // Highlight matching pair with strong visual effects
+    const { goods, tem } = randomMatch;
+
+    // Add multiple highlight classes for better visibility
+    goods.classList.add(
+      "hint-glow",
+      "animate-pulse",
+      "ring-4",
+      "ring-blue-500",
+      "ring-offset-2",
+      "z-50",
+      "relative"
     );
-    const temCards = document.querySelectorAll(".tem-card");
+    tem.classList.add(
+      "hint-glow",
+      "animate-pulse",
+      "ring-4",
+      "ring-indigo-500",
+      "ring-offset-2",
+      "z-50",
+      "relative"
+    );
 
-    if (goodsZones.length > 0 && temCards.length > 0) {
-      const randomGoods = goodsZones[
-        Math.floor(Math.random() * goodsZones.length)
-      ] as HTMLElement;
-      const correctTem = randomGoods.dataset.tem;
-      const matchingTem = document.querySelector(
-        `[data-tem="${correctTem}"]`
-      ) as HTMLElement;
+    // Change background colors for better visibility
+    const originalGoodsBg = goods.style.background;
+    const originalTemBg = tem.style.background;
+    goods.style.background =
+      "linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(99, 102, 241, 0.4))";
+    tem.style.background =
+      "linear-gradient(135deg, rgba(99, 102, 241, 0.6), rgba(139, 92, 246, 0.6))";
 
-      if (matchingTem) {
-        // Highlight matching pair
-        randomGoods.classList.add("hint-glow");
-        matchingTem.classList.add("hint-glow", "animate-pulse");
+    // Show clear notification with instruction
+    const goodsName = goods.querySelector("div")?.textContent || "hàng";
+    const temName = tem.textContent?.trim() || "tem phiếu";
+    showNotification(
+      `💡 Gợi ý: Kéo "${temName}" vào "${goodsName}"!`,
+      "info",
+      4000
+    );
 
-        showNotification(
-          "💡 Gợi ý: Tem và hàng được làm nổi bật!",
-          "info",
-          3000
-        );
+    // Create visual connection effect
+    createHintConnection(goods, tem);
 
-        setTimeout(() => {
-          randomGoods.classList.remove("hint-glow");
-          matchingTem.classList.remove("hint-glow", "animate-pulse");
-        }, 3000);
-      }
+    // Remove highlight after duration
+    setTimeout(() => {
+      goods.classList.remove(
+        "hint-glow",
+        "animate-pulse",
+        "ring-4",
+        "ring-blue-500",
+        "ring-offset-2",
+        "z-50",
+        "relative"
+      );
+      tem.classList.remove(
+        "hint-glow",
+        "animate-pulse",
+        "ring-4",
+        "ring-indigo-500",
+        "ring-offset-2",
+        "z-50",
+        "relative"
+      );
+      goods.style.background = originalGoodsBg;
+      tem.style.background = originalTemBg;
+    }, 5000);
+  }
+
+  // Helper function to create visual connection between hint items
+  let hintConnectionActive = false;
+  let hintConnectionFrameId: number | null = null;
+
+  function createHintConnection(goods: HTMLElement, tem: HTMLElement) {
+    const canvas = document.getElementById(
+      "particle-canvas"
+    ) as HTMLCanvasElement;
+    if (!canvas || !ctx) return;
+
+    // Clear any existing hint connection
+    if (hintConnectionActive && hintConnectionFrameId) {
+      cancelAnimationFrame(hintConnectionFrameId);
+      hintConnectionActive = false;
     }
 
-    playSound("hint");
+    const goodsRect = goods.getBoundingClientRect();
+    const temRect = tem.getBoundingClientRect();
+
+    const goodsX = goodsRect.left + goodsRect.width / 2;
+    const goodsY = goodsRect.top + goodsRect.height / 2;
+    const temX = temRect.left + temRect.width / 2;
+    const temY = temRect.top + temRect.height / 2;
+
+    // Draw animated connecting line
+    let progress = 0;
+    hintConnectionActive = true;
+
+    const drawLine = () => {
+      if (!hintConnectionActive || progress >= 1) {
+        hintConnectionActive = false;
+        hintConnectionFrameId = null;
+        return;
+      }
+
+      // Don't clear the entire canvas - just draw on top
+      // The particle animation will continue separately
+
+      progress += 0.03;
+      const currentX = goodsX + (temX - goodsX) * progress;
+      const currentY = goodsY + (temY - goodsY) * progress;
+
+      // Save context state
+      ctx.save();
+
+      // Draw dashed line
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.9)";
+      ctx.lineWidth = 4;
+      ctx.setLineDash([8, 4]);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(goodsX, goodsY);
+      ctx.lineTo(currentX, currentY);
+      ctx.stroke();
+
+      // Draw glowing particles along the line
+      for (let i = 0; i < 8; i++) {
+        const offset = progress - i * 0.08;
+        if (offset > 0 && offset < progress) {
+          const pX = goodsX + (temX - goodsX) * offset;
+          const pY = goodsY + (temY - goodsY) * offset;
+
+          // Create gradient for particle
+          const gradient = ctx.createRadialGradient(pX, pY, 0, pX, pY, 8);
+          gradient.addColorStop(0, "rgba(139, 92, 246, 1)");
+          gradient.addColorStop(0.5, "rgba(99, 102, 241, 0.6)");
+          gradient.addColorStop(1, "rgba(59, 130, 246, 0)");
+
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(pX, pY, 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Draw arrow at the end
+      if (progress > 0.1) {
+        const arrowX = currentX;
+        const arrowY = currentY;
+        const angle = Math.atan2(temY - goodsY, temX - goodsX);
+
+        ctx.fillStyle = "rgba(99, 102, 241, 0.9)";
+        ctx.beginPath();
+        ctx.moveTo(arrowX, arrowY);
+        ctx.lineTo(
+          arrowX - 12 * Math.cos(angle - Math.PI / 6),
+          arrowY - 12 * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.lineTo(
+          arrowX - 12 * Math.cos(angle + Math.PI / 6),
+          arrowY - 12 * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      hintConnectionFrameId = requestAnimationFrame(drawLine);
+    };
+
+    drawLine();
+
+    // Stop after 2 seconds
+    setTimeout(() => {
+      hintConnectionActive = false;
+      if (hintConnectionFrameId) {
+        cancelAnimationFrame(hintConnectionFrameId);
+        hintConnectionFrameId = null;
+      }
+    }, 2000);
   }
 
   function useFreeze() {

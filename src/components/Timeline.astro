@@ -69,6 +69,24 @@ import ImageZoom from "./ImageZoom.astro";
                     {event.description}
                   </p>
 
+                  <!-- Additional Info Preview -->
+                  {(event.location || event.statistics) && (
+                    <div class="flex flex-wrap gap-2 mb-4 text-xs">
+                      {event.location && (
+                        <span class="px-3 py-1 bg-blue-500/15 border border-blue-500/30 rounded-full text-blue-300 flex items-center gap-1">
+                          <Icon name="map" class="w-3 h-3" />
+                          {event.location}
+                        </span>
+                      )}
+                      {event.statistics && event.statistics.length > 0 && (
+                        <span class="px-3 py-1 bg-purple-500/15 border border-purple-500/30 rounded-full text-purple-300 flex items-center gap-1">
+                          <Icon name="chart-bar" class="w-3 h-3" />
+                          {event.statistics.length} số liệu
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   <!-- Keywords -->
                   <div class={`flex flex-wrap gap-2 ${index % 2 === 0 ? 'md:justify-end' : 'md:justify-start'}`}>
                     {event.keywords.map(keyword => (

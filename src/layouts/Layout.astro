@@ -88,14 +88,14 @@ import { ViewTransitions } from "astro:transitions";
           return JSON.parse(localState);
         }
       } catch (e) {}
-      
+
       try {
         const sessionState = sessionStorage.getItem(AUDIO_KEY_SESSION);
         if (sessionState) {
           return JSON.parse(sessionState);
         }
       } catch (e) {}
-      
+
       return null;
     }
 
@@ -144,20 +144,52 @@ import { ViewTransitions } from "astro:transitions";
         return originalPause();
       };
 
-      // Override load() to ensure it doesn't pause
+      // Override load() to prevent resetting currentTime and pausing
       const originalLoad = audio.load.bind(audio);
       audio.load = function () {
         const state = getAudioState();
         const wasPlaying = state ? state.isPlaying : false;
+        const savedCurrentTime = state ? state.currentTime : 0;
 
-        originalLoad.call(this);
+        // Only allow load if audio is truly broken or user explicitly wants to reload
+        // Otherwise, prevent load to maintain currentTime
+        if (!wasPlaying && !state) {
+          // Only load if audio wasn't playing and no state exists
+          originalLoad.call(this);
+          return;
+        }
 
-        // If it was playing, resume immediately after load
-        if (wasPlaying) {
-          setTimeout(() => {
-            this.play().catch(() => {});
-            this.play().catch(() => {});
-          }, 0);
+        // If audio was playing, DON'T call load() - it will reset currentTime
+        // Instead, just ensure it continues playing
+        if (wasPlaying && savedCurrentTime > 0) {
+          // Restore currentTime after a micro delay to ensure audio is ready
+          const restoreAfterLoad = () => {
+            if (this.readyState >= 2) {
+              // Audio is loaded enough to set currentTime
+              this.currentTime = savedCurrentTime;
+              this.play().catch(() => {});
+            } else {
+              // Wait for audio to be ready
+              this.addEventListener(
+                "canplay",
+                () => {
+                  this.currentTime = savedCurrentTime;
+                  this.play().catch(() => {});
+                },
+                { once: true }
+              );
+            }
+          };
+
+          // Only call original load if absolutely necessary
+          originalLoad.call(this);
+
+          // Restore currentTime as soon as possible
+          setTimeout(restoreAfterLoad, 0);
+          this.addEventListener("loadeddata", restoreAfterLoad, { once: true });
+          this.addEventListener("canplay", restoreAfterLoad, { once: true });
+        } else {
+          originalLoad.call(this);
         }
       };
 
@@ -168,41 +200,39 @@ import { ViewTransitions } from "astro:transitions";
 
         const state = getAudioState();
         if (state && state.isPlaying) {
-              // Resume IMMEDIATELY - NO DELAY AT ALL
+          // Resume IMMEDIATELY - NO DELAY AT ALL
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+
+          // Also use all async methods to ensure it resumes
+          Promise.resolve().then(() => {
+            if (audio.paused && state.isPlaying) {
               audio.play().catch(() => {});
               audio.play().catch(() => {});
-              audio.play().catch(() => {});
-
-              // Also use all async methods to ensure it resumes
-              Promise.resolve().then(() => {
-                if (audio.paused && state.isPlaying) {
-                  audio.play().catch(() => {});
-                  audio.play().catch(() => {});
-                }
-              });
-
-              requestAnimationFrame(() => {
-                if (audio.paused && state.isPlaying) {
-                  audio.play().catch(() => {});
-                  audio.play().catch(() => {});
-                }
-              });
-
-              if (window.requestIdleCallback) {
-                requestIdleCallback(
-                  () => {
-                    if (audio.paused && state.isPlaying) {
-                      audio.play().catch(() => {});
-                      audio.play().catch(() => {});
-                    }
-                  },
-                  { timeout: 0 }
-                );
-              }
-
-              return false;
             }
-          } catch (e) {}
+          });
+
+          requestAnimationFrame(() => {
+            if (audio.paused && state.isPlaying) {
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+            }
+          });
+
+          if (window.requestIdleCallback) {
+            requestIdleCallback(
+              () => {
+                if (audio.paused && state.isPlaying) {
+                  audio.play().catch(() => {});
+                  audio.play().catch(() => {});
+                }
+              },
+              { timeout: 0 }
+            );
+          }
+
+          return false;
         }
       };
 
@@ -225,35 +255,90 @@ import { ViewTransitions } from "astro:transitions";
       if (state) {
         audio.volume = state.volume || 0.7;
 
-        if (state.currentTime && audio.duration > 0) {
-          audio.currentTime = state.currentTime;
-        }
+        // CRITICAL: Restore currentTime IMMEDIATELY, even if audio isn't fully loaded
+        // This prevents audio from restarting from the beginning
+        const restoreCurrentTime = () => {
+          if (state.currentTime) {
+            // Try to set currentTime immediately
+            try {
+              if (audio.readyState >= 2) {
+                // Audio metadata is loaded, can set currentTime
+                audio.currentTime = state.currentTime;
+              } else {
+                // Wait for metadata to load
+                const setTimeWhenReady = () => {
+                  if (
+                    audio.duration > 0 &&
+                    state.currentTime < audio.duration
+                  ) {
+                    audio.currentTime = state.currentTime;
+                  }
+                };
+                audio.addEventListener("loadedmetadata", setTimeWhenReady, {
+                  once: true,
+                });
+                audio.addEventListener("loadeddata", setTimeWhenReady, {
+                  once: true,
+                });
+                audio.addEventListener("canplay", setTimeWhenReady, {
+                  once: true,
+                });
+              }
+            } catch (e) {
+              // Fallback: try again when ready
+              audio.addEventListener(
+                "canplay",
+                () => {
+                  if (
+                    audio.duration > 0 &&
+                    state.currentTime < audio.duration
+                  ) {
+                    audio.currentTime = state.currentTime;
+                  }
+                },
+                { once: true }
+              );
+            }
+          }
+        };
+
+        // Restore currentTime immediately
+        restoreCurrentTime();
 
         // Restore playing state - try to auto-resume if it was playing
         if (state.isPlaying) {
-            // Play immediately - no delays, no checks
-            const tryResume = () => {
-              if (audio && audio.paused) {
-                audio.play().catch(() => {
-                  // Auto-play blocked, will need user interaction
-                });
-              }
-              // Double-check: ensure it's playing
-              if (audio && audio.paused) {
-                audio.play().catch(() => {});
-              }
-            };
-
-            // Try immediately - no conditions
-            tryResume();
-
-            // Also try when audio is ready (if not already)
-            if (audio.readyState < 2) {
-              audio.addEventListener("canplaythrough", tryResume, {
-                once: true,
-              });
-              audio.addEventListener("loadeddata", tryResume, { once: true });
+          // Play immediately - no delays, no checks
+          const tryResume = () => {
+            // First ensure currentTime is restored
+            if (
+              state.currentTime &&
+              audio.duration > 0 &&
+              audio.currentTime !== state.currentTime
+            ) {
+              audio.currentTime = state.currentTime;
             }
+
+            if (audio && audio.paused) {
+              audio.play().catch(() => {
+                // Auto-play blocked, will need user interaction
+              });
+            }
+            // Double-check: ensure it's playing
+            if (audio && audio.paused) {
+              audio.play().catch(() => {});
+            }
+          };
+
+          // Try immediately - no conditions
+          tryResume();
+
+          // Also try when audio is ready (if not already)
+          if (audio.readyState < 2) {
+            audio.addEventListener("canplaythrough", tryResume, {
+              once: true,
+            });
+            audio.addEventListener("loadeddata", tryResume, { once: true });
+            audio.addEventListener("canplay", tryResume, { once: true });
           }
         }
       } else {
@@ -289,22 +374,35 @@ import { ViewTransitions } from "astro:transitions";
     function saveAudioState() {
       const audio = window.__baocapAudio__;
       if (audio) {
+        // Save currentTime more frequently to prevent loss during transitions
         const state = {
           isPlaying: !audio.paused,
           volume: audio.volume,
-          currentTime: audio.currentTime,
+          currentTime: audio.currentTime || 0, // Always save currentTime, even if 0
         };
         saveAudioStateToStorage(state);
       }
     }
 
-    // Save every 5 seconds if playing
+    // Save every 1 second if playing (more frequent to catch currentTime changes)
     setInterval(() => {
       const audio = window.__baocapAudio__;
       if (audio && !audio.paused) {
         saveAudioState();
       }
-    }, 5000);
+    }, 1000);
+
+    // Also save currentTime continuously even when paused (to track position)
+    setInterval(() => {
+      const audio = window.__baocapAudio__;
+      if (audio && audio.currentTime > 0) {
+        const state = getAudioState();
+        if (state) {
+          state.currentTime = audio.currentTime;
+          saveAudioStateToStorage(state);
+        }
+      }
+    }, 500); // Save every 500ms to track position
 
     // Continuous monitoring to ensure audio keeps playing during page transitions
     setInterval(() => {
@@ -348,98 +446,104 @@ import { ViewTransitions } from "astro:transitions";
       // Save state right before page transition
       const audio = window.__baocapAudio__;
       if (audio) {
-        // Save current state immediately
-        saveAudioState();
-        
+        // CRITICAL: Save current state immediately with currentTime
+        const currentState = {
+          isPlaying: !audio.paused,
+          volume: audio.volume,
+          currentTime: audio.currentTime || 0,
+        };
+        saveAudioStateToStorage(currentState);
+
         const state = getAudioState();
         if (state && state.isPlaying) {
-              // CRITICAL: Ensure audio continues playing DURING transition
-              // Don't let it pause at all
-              if (audio.paused) {
-                // Resume immediately before transition starts
-                audio.currentTime = state.currentTime || audio.currentTime;
-                audio.play().catch(() => {});
-              }
+          // Ensure currentTime is preserved
+          if (audio.currentTime > 0) {
+            state.currentTime = audio.currentTime;
+            saveAudioStateToStorage(state);
+          }
 
-              // Play multiple times BEFORE transition starts to ensure it doesn't pause
+          // CRITICAL: Ensure audio continues playing DURING transition
+          // Don't let it pause at all
+          if (audio.paused) {
+            // Resume immediately before transition starts
+            audio.currentTime = state.currentTime || audio.currentTime;
+            audio.play().catch(() => {});
+          }
+
+          // Play multiple times BEFORE transition starts to ensure it doesn't pause
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+
+          // Add aggressive listener to prevent ANY pause during transition
+          const preventPauseDuringTransition = (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            if (state.isPlaying && audio.paused) {
+              // Resume immediately - play multiple times, NO DELAY
+              audio.currentTime = state.currentTime || audio.currentTime;
               audio.play().catch(() => {});
               audio.play().catch(() => {});
               audio.play().catch(() => {});
 
-              // Add aggressive listener to prevent ANY pause during transition
-              const preventPauseDuringTransition = (e) => {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-
-                if (state.isPlaying && audio.paused) {
-                  // Resume immediately - play multiple times, NO DELAY
-                  audio.currentTime = state.currentTime || audio.currentTime;
-                  audio.play().catch(() => {});
-                  audio.play().catch(() => {});
-                  audio.play().catch(() => {});
-
-                  // Use all async methods
-                  Promise.resolve().then(() => {
-                    if (audio.paused && state.isPlaying) {
-                      audio.play().catch(() => {});
-                      audio.play().catch(() => {});
-                    }
-                  });
-
-                  requestAnimationFrame(() => {
-                    if (audio.paused && state.isPlaying) {
-                      audio.play().catch(() => {});
-                      audio.play().catch(() => {});
-                    }
-                  });
-
-                  return false;
-                }
-              };
-
-              // Listen in capture phase to catch pause events early - MULTIPLE LISTENERS
-              audio.addEventListener("pause", preventPauseDuringTransition, {
-                passive: false,
-                capture: true,
-                once: false, // Keep listening during entire transition
-              });
-
-              // Also in bubble phase
-              audio.addEventListener("pause", preventPauseDuringTransition, {
-                passive: false,
-                capture: false,
-                once: false,
-              });
-
-              // Also monitor continuously during transition - VERY AGGRESSIVE
-              const monitorInterval = setInterval(() => {
-                if (state.isPlaying && audio.paused) {
-                  // Play multiple times to ensure it works
-                  audio.play().catch(() => {});
+              // Use all async methods
+              Promise.resolve().then(() => {
+                if (audio.paused && state.isPlaying) {
                   audio.play().catch(() => {});
                   audio.play().catch(() => {});
                 }
-              }, 5); // Check every 5ms during transition - MAXIMUM RESPONSIVENESS
+              });
 
-              // Stop monitoring after transition completes
-              document.addEventListener(
-                "astro:page-load",
-                () => {
-                  clearInterval(monitorInterval);
-                  audio.removeEventListener(
-                    "pause",
-                    preventPauseDuringTransition,
-                    { capture: true }
-                  );
-                  audio.removeEventListener(
-                    "pause",
-                    preventPauseDuringTransition,
-                    { capture: false }
-                  );
-                },
-                { once: true }
-              );
+              requestAnimationFrame(() => {
+                if (audio.paused && state.isPlaying) {
+                  audio.play().catch(() => {});
+                  audio.play().catch(() => {});
+                }
+              });
+
+              return false;
             }
+          };
+
+          // Listen in capture phase to catch pause events early - MULTIPLE LISTENERS
+          audio.addEventListener("pause", preventPauseDuringTransition, {
+            passive: false,
+            capture: true,
+            once: false, // Keep listening during entire transition
+          });
+
+          // Also in bubble phase
+          audio.addEventListener("pause", preventPauseDuringTransition, {
+            passive: false,
+            capture: false,
+            once: false,
+          });
+
+          // Also monitor continuously during transition - VERY AGGRESSIVE
+          const monitorInterval = setInterval(() => {
+            if (state.isPlaying && audio.paused) {
+              // Play multiple times to ensure it works
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+            }
+          }, 5); // Check every 5ms during transition - MAXIMUM RESPONSIVENESS
+
+          // Stop monitoring after transition completes
+          document.addEventListener(
+            "astro:page-load",
+            () => {
+              clearInterval(monitorInterval);
+              audio.removeEventListener("pause", preventPauseDuringTransition, {
+                capture: true,
+              });
+              audio.removeEventListener("pause", preventPauseDuringTransition, {
+                capture: false,
+              });
+            },
+            { once: true }
+          );
         }
       }
     });
@@ -451,62 +555,103 @@ import { ViewTransitions } from "astro:transitions";
 
       const state = getAudioState();
       if (state) {
+        // Restore volume immediately
+        audio.volume = state.volume || 0.7;
 
-          // Restore volume immediately
-          audio.volume = state.volume || 0.7;
-
-          // CRITICAL: If it was playing, resume IMMEDIATELY - ABSOLUTE NO DELAY
-          if (state.isPlaying) {
-            // Play immediately - NO conditions, NO checks, NO delays
-            // Play multiple times to ensure it works
-            audio.play().catch(() => {});
-            audio.play().catch(() => {});
-            audio.play().catch(() => {});
-            audio.play().catch(() => {});
-            audio.play().catch(() => {});
-
-            // Also restore current time immediately if valid
-            if (
-              state.currentTime &&
-              audio.duration > 0 &&
-              Math.abs(audio.currentTime - state.currentTime) > 0.5
-            ) {
-              audio.currentTime = state.currentTime;
-            }
-
-            // Use ALL async methods to ensure it resumes
-            Promise.resolve().then(() => {
-              if (audio.paused && state.isPlaying) {
-                audio.play().catch(() => {});
-                audio.play().catch(() => {});
+        // CRITICAL: Restore currentTime IMMEDIATELY, even before audio is fully loaded
+        // This prevents audio from restarting from the beginning
+        const restoreTimeImmediate = () => {
+          if (state.currentTime && state.currentTime > 0) {
+            try {
+              if (audio.readyState >= 2 && audio.duration > 0) {
+                if (state.currentTime < audio.duration) {
+                  audio.currentTime = state.currentTime;
+                }
+              } else {
+                const setTime = () => {
+                  if (
+                    audio.duration > 0 &&
+                    state.currentTime < audio.duration
+                  ) {
+                    audio.currentTime = state.currentTime;
+                  }
+                };
+                audio.addEventListener("loadedmetadata", setTime, {
+                  once: true,
+                });
+                audio.addEventListener("loadeddata", setTime, { once: true });
+                audio.addEventListener("canplay", setTime, { once: true });
               }
-            });
-
-            setTimeout(() => {
-              if (audio.paused && state.isPlaying) {
-                audio.play().catch(() => {});
-                audio.play().catch(() => {});
-              }
-            }, 0);
-
-            requestAnimationFrame(() => {
-              if (audio.paused && state.isPlaying) {
-                audio.play().catch(() => {});
-                audio.play().catch(() => {});
-              }
-            });
-
-            if (window.requestIdleCallback) {
-              requestIdleCallback(
+            } catch (e) {
+              audio.addEventListener(
+                "canplay",
                 () => {
-                  if (audio.paused && state.isPlaying) {
-                    audio.play().catch(() => {});
-                    audio.play().catch(() => {});
+                  if (
+                    audio.duration > 0 &&
+                    state.currentTime < audio.duration
+                  ) {
+                    audio.currentTime = state.currentTime;
                   }
                 },
-                { timeout: 0 }
+                { once: true }
               );
             }
+          }
+        };
+
+        restoreTimeImmediate();
+
+        // CRITICAL: If it was playing, resume IMMEDIATELY - ABSOLUTE NO DELAY
+        if (state.isPlaying) {
+          // Ensure currentTime is set before playing
+          if (
+            state.currentTime &&
+            audio.readyState >= 2 &&
+            audio.duration > 0
+          ) {
+            audio.currentTime = state.currentTime;
+          }
+
+          // Play immediately - NO conditions, NO checks, NO delays
+          // Play multiple times to ensure it works
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+
+          // Use ALL async methods to ensure it resumes
+          Promise.resolve().then(() => {
+            if (audio.paused && state.isPlaying) {
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+            }
+          });
+
+          setTimeout(() => {
+            if (audio.paused && state.isPlaying) {
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+            }
+          }, 0);
+
+          requestAnimationFrame(() => {
+            if (audio.paused && state.isPlaying) {
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+            }
+          });
+
+          if (window.requestIdleCallback) {
+            requestIdleCallback(
+              () => {
+                if (audio.paused && state.isPlaying) {
+                  audio.play().catch(() => {});
+                  audio.play().catch(() => {});
+                }
+              },
+              { timeout: 0 }
+            );
           }
         }
       }
@@ -542,43 +687,88 @@ import { ViewTransitions } from "astro:transitions";
       // IMMEDIATELY restore audio - ABSOLUTE NO DELAY, NO WAITING
       const state = getAudioState();
       if (state) {
+        // Restore volume immediately
+        audio.volume = state.volume || 0.7;
 
-          // Restore volume immediately
-          audio.volume = state.volume || 0.7;
+        // CRITICAL: Restore currentTime IMMEDIATELY, even before audio is fully loaded
+        // This prevents audio from restarting from the beginning
+        const restoreTime = () => {
+          if (state.currentTime && state.currentTime > 0) {
+            try {
+              if (audio.readyState >= 2 && audio.duration > 0) {
+                // Audio metadata is loaded, can set currentTime immediately
+                if (state.currentTime < audio.duration) {
+                  audio.currentTime = state.currentTime;
+                }
+              } else {
+                // Wait for metadata, but set as soon as possible
+                const setTime = () => {
+                  if (
+                    audio.duration > 0 &&
+                    state.currentTime < audio.duration
+                  ) {
+                    audio.currentTime = state.currentTime;
+                  }
+                };
+                audio.addEventListener("loadedmetadata", setTime, {
+                  once: true,
+                });
+                audio.addEventListener("loadeddata", setTime, { once: true });
+                audio.addEventListener("canplay", setTime, { once: true });
+              }
+            } catch (e) {
+              // Fallback: try when ready
+              audio.addEventListener(
+                "canplay",
+                () => {
+                  if (
+                    audio.duration > 0 &&
+                    state.currentTime < audio.duration
+                  ) {
+                    audio.currentTime = state.currentTime;
+                  }
+                },
+                { once: true }
+              );
+            }
+          }
+        };
 
-          // Restore current time immediately if valid
+        // Restore time immediately
+        restoreTime();
+
+        // CRITICAL: If it was playing, resume IMMEDIATELY - ABSOLUTE NO DELAY
+        if (state.isPlaying) {
+          // Ensure currentTime is set before playing
           if (
             state.currentTime &&
-            audio.duration > 0 &&
-            Math.abs(audio.currentTime - state.currentTime) > 0.5
+            audio.readyState >= 2 &&
+            audio.duration > 0
           ) {
             audio.currentTime = state.currentTime;
           }
+          // Play immediately - NO conditions, NO checks, NO delays
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
 
-          // CRITICAL: If it was playing, resume IMMEDIATELY - ABSOLUTE NO DELAY
-          if (state.isPlaying) {
-            // Play immediately - NO conditions, NO checks, NO delays
-            audio.play().catch(() => {});
-            audio.play().catch(() => {});
-            audio.play().catch(() => {});
+          // Immediate double-check after microtask
+          Promise.resolve().then(() => {
+            if (audio.paused && state.isPlaying) {
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+            }
+          });
 
-            // Immediate double-check after microtask
-            Promise.resolve().then(() => {
-              if (audio.paused && state.isPlaying) {
-                audio.play().catch(() => {});
-                audio.play().catch(() => {});
-              }
-            });
-
-            // Also check after next frame
-            requestAnimationFrame(() => {
-              if (audio.paused && state.isPlaying) {
-                audio.play().catch(() => {});
-                audio.play().catch(() => {});
-              }
-            });
-          }
+          // Also check after next frame
+          requestAnimationFrame(() => {
+            if (audio.paused && state.isPlaying) {
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+            }
+          });
         }
+      }
 
       // Continuous monitoring to ensure audio keeps playing
       const checkAndResume = () => {

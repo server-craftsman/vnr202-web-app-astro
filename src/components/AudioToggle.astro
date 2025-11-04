@@ -449,16 +449,47 @@ import ambienceAudio from "../assets/music-for-victory-parade-1.mp3";
         if (state.volume) {
           audio.volume = state.volume;
         }
-        // Restore current time immediately if valid
-        if (
-          state.currentTime &&
-          audio.duration > 0 &&
-          state.currentTime < audio.duration
-        ) {
-          audio.currentTime = state.currentTime;
-        }
+        // CRITICAL: Restore currentTime IMMEDIATELY, even if audio isn't fully loaded
+        // This prevents audio from restarting from the beginning
+        const restoreCurrentTime = () => {
+          if (state.currentTime && state.currentTime > 0) {
+            try {
+              if (audio.readyState >= 2 && audio.duration > 0) {
+                // Audio metadata is loaded, can set currentTime immediately
+                if (state.currentTime < audio.duration) {
+                  audio.currentTime = state.currentTime;
+                }
+              } else {
+                // Wait for metadata to load
+                const setTimeWhenReady = () => {
+                  if (audio.duration > 0 && state.currentTime < audio.duration) {
+                    audio.currentTime = state.currentTime;
+                  }
+                };
+                audio.addEventListener("loadedmetadata", setTimeWhenReady, { once: true });
+                audio.addEventListener("loadeddata", setTimeWhenReady, { once: true });
+                audio.addEventListener("canplay", setTimeWhenReady, { once: true });
+              }
+            } catch (e) {
+              // Fallback: try again when ready
+              audio.addEventListener("canplay", () => {
+                if (audio.duration > 0 && state.currentTime < audio.duration) {
+                  audio.currentTime = state.currentTime;
+                }
+              }, { once: true });
+            }
+          }
+        };
+        
+        // Restore currentTime immediately
+        restoreCurrentTime();
+        
         // Try to resume if it was playing (immediately, ABSOLUTE NO DELAY)
         if (state.isPlaying) {
+          // Ensure currentTime is set before playing
+          if (state.currentTime && audio.readyState >= 2 && audio.duration > 0) {
+            audio.currentTime = state.currentTime;
+          }
           // Resume IMMEDIATELY - play multiple times to ensure it works
           audio.play().catch(() => {});
           audio.play().catch(() => {});
@@ -678,16 +709,16 @@ import ambienceAudio from "../assets/music-for-victory-parade-1.mp3";
       const state = {
         isPlaying: !audio.paused,
         volume: audio.volume,
-        currentTime: audio.currentTime,
+        currentTime: audio.currentTime || 0, // Always save currentTime
       };
       saveAudioStateToStorage(state);
     }
   }
 
-  // Save state periodically
+  // Save state more frequently to catch currentTime changes
   setInterval(() => {
     saveState();
-  }, 3000);
+  }, 1000); // Changed from 3000ms to 1000ms for more frequent saves
 
   // Right-click on button to open volume popup
   toggleBtn?.addEventListener("contextmenu", (e) => {

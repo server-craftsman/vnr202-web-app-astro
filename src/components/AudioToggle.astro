@@ -618,77 +618,51 @@ import ambienceAudio from "../assets/music-for-victory-parade-1.mp3";
     if (volumeTimeout) clearTimeout(volumeTimeout);
   }
 
-  // Toggle Play/Pause
+  // DISABLE pause - only allow volume control popup
   toggleBtn?.addEventListener("click", (e) => {
     const audio =
       window.__baocapAudio__ ||
       (document.getElementById("ambient-audio") as HTMLAudioElement);
     if (!audio) return;
 
-    // If clicking on button and volume popup is visible, toggle popup
-    if (
-      !volumeControl?.classList.contains("hidden") &&
-      e.target === toggleBtn
-    ) {
+    // Clicking button now ONLY opens volume control - CANNOT pause!
+    // If volume popup is visible, close it
+    if (!volumeControl?.classList.contains("hidden")) {
       closeVolumePopup();
-      return;
-    }
-
-    // Toggle play/pause
-    if (isPlaying) {
-      // Pause audio - but only if user explicitly wants to pause
-      // Update state first to allow pause
-      const currentState = getAudioState();
-      if (currentState) {
-        currentState.isPlaying = false;
-        saveAudioStateToStorage(currentState);
-      } else {
-        saveAudioStateToStorage({
-          isPlaying: false,
-          volume: audio.volume,
-          currentTime: audio.currentTime,
-        });
-      }
-      audio.pause();
-      volumeOn?.classList.add("hidden");
-      volumeOff?.classList.remove("hidden");
-      toggleBtn.classList.remove(
-        "from-amber-500",
-        "to-yellow-600",
-        "border-amber-400"
-      );
-      toggleBtn.classList.add(
-        "from-neutral-600",
-        "to-neutral-700",
-        "border-neutral-500"
-      );
-      pulseRing?.classList.add("hidden");
-      playingIndicator?.classList.add("hidden");
-      isPlaying = false;
-      toggleBtn.title = "Bật âm thanh";
     } else {
-      // Play audio
-      audio.play().catch((err) => console.log("Audio play error:", err));
-      volumeOff?.classList.add("hidden");
-      volumeOn?.classList.remove("hidden");
-      toggleBtn.classList.add(
-        "from-amber-500",
-        "to-yellow-600",
-        "border-amber-400"
-      );
-      toggleBtn.classList.remove(
-        "from-neutral-600",
-        "to-neutral-700",
-        "border-neutral-500"
-      );
-      pulseRing?.classList.remove("hidden");
-      playingIndicator?.classList.remove("hidden");
-      isPlaying = true;
-      toggleBtn.title = "Tắt âm thanh";
+      // Open volume control
+      openVolumePopup();
     }
-
-    // Save state
-    saveState();
+    
+    // ALWAYS keep audio playing - force play if somehow paused
+    if (audio.paused) {
+      audio.play().catch(() => {});
+    }
+    
+    // ALWAYS show as playing
+    volumeOff?.classList.add("hidden");
+    volumeOn?.classList.remove("hidden");
+    toggleBtn.classList.add(
+      "from-amber-500",
+      "to-yellow-600",
+      "border-amber-400"
+    );
+    toggleBtn.classList.remove(
+      "from-neutral-600",
+      "to-neutral-700",
+      "border-neutral-500"
+    );
+    pulseRing?.classList.remove("hidden");
+    playingIndicator?.classList.remove("hidden");
+    isPlaying = true;
+    toggleBtn.title = "Điều chỉnh âm lượng";
+    
+    // Force state to always playing
+    saveAudioStateToStorage({
+      isPlaying: true,
+      volume: audio.volume,
+      currentTime: audio.currentTime,
+    });
   });
 
   // Save state function

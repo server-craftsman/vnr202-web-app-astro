@@ -132,6 +132,58 @@ import { ViewTransitions } from "astro:transitions";
       // Store globally to survive navigation
       window.__baocapAudio__ = audio;
 
+      // CRITICAL: Monitor currentTime to detect when it resets to 0 and restore immediately
+      let lastKnownCurrentTime = 0;
+      const monitorCurrentTime = setInterval(() => {
+        if (audio) {
+          const state = getAudioState();
+          if (state && state.isPlaying && state.currentTime > 0) {
+            // If currentTime suddenly dropped to near 0 (less than 0.5s) but we have saved time > 1s
+            // This means audio was reset - restore immediately!
+            if (
+              audio.currentTime < 0.5 &&
+              state.currentTime > 1 &&
+              lastKnownCurrentTime > 1
+            ) {
+              console.log(
+                "Audio reset detected! Restoring currentTime:",
+                state.currentTime
+              );
+              // Restore immediately
+              if (audio.readyState >= 2 && audio.duration > 0) {
+                audio.currentTime = state.currentTime;
+                if (audio.paused) {
+                  audio.play().catch(() => {});
+                }
+              } else {
+                // Wait for metadata
+                const restoreWhenReady = () => {
+                  if (
+                    audio.duration > 0 &&
+                    state.currentTime < audio.duration
+                  ) {
+                    audio.currentTime = state.currentTime;
+                    if (audio.paused) {
+                      audio.play().catch(() => {});
+                    }
+                  }
+                };
+                audio.addEventListener("loadedmetadata", restoreWhenReady, {
+                  once: true,
+                });
+                audio.addEventListener("canplay", restoreWhenReady, {
+                  once: true,
+                });
+              }
+            }
+            // Update last known time
+            if (audio.currentTime > 0.5) {
+              lastKnownCurrentTime = audio.currentTime;
+            }
+          }
+        }
+      }, 100); // Check every 100ms
+
       // CRITICAL: Override pause method to prevent audio from ever pausing if it should be playing
       const originalPause = audio.pause.bind(audio);
       audio.pause = function () {
@@ -305,20 +357,60 @@ import { ViewTransitions } from "astro:transitions";
         // Restore currentTime immediately
         restoreCurrentTime();
 
+        // CRITICAL: Set initial lastKnownCurrentTime
+        if (state.currentTime) {
+          lastKnownCurrentTime = state.currentTime;
+        }
+
         // Restore playing state - try to auto-resume if it was playing
         if (state.isPlaying) {
           // Play immediately - no delays, no checks
           const tryResume = () => {
-            // First ensure currentTime is restored
-            if (
-              state.currentTime &&
-              audio.duration > 0 &&
-              audio.currentTime !== state.currentTime
-            ) {
-              audio.currentTime = state.currentTime;
+            // First ensure currentTime is restored - CRITICAL to do this BEFORE playing
+            if (state.currentTime && state.currentTime > 0) {
+              if (audio.readyState >= 2 && audio.duration > 0) {
+                // Audio is ready, set currentTime immediately
+                if (state.currentTime < audio.duration) {
+                  audio.currentTime = state.currentTime;
+                  lastKnownCurrentTime = state.currentTime;
+                }
+              } else {
+                // Wait for metadata, but set as soon as possible
+                const setTimeAndPlay = () => {
+                  if (
+                    audio.duration > 0 &&
+                    state.currentTime < audio.duration
+                  ) {
+                    audio.currentTime = state.currentTime;
+                    lastKnownCurrentTime = state.currentTime;
+                  }
+                  if (audio && audio.paused) {
+                    audio.play().catch(() => {});
+                  }
+                };
+                audio.addEventListener("loadedmetadata", setTimeAndPlay, {
+                  once: true,
+                });
+                audio.addEventListener("loadeddata", setTimeAndPlay, {
+                  once: true,
+                });
+                audio.addEventListener("canplay", setTimeAndPlay, {
+                  once: true,
+                });
+              }
             }
 
             if (audio && audio.paused) {
+              // Only play if currentTime is already set (or audio not ready yet)
+              if (audio.readyState >= 2 && state.currentTime) {
+                // Ensure currentTime is set before playing
+                if (
+                  audio.currentTime !== state.currentTime &&
+                  state.currentTime < audio.duration
+                ) {
+                  audio.currentTime = state.currentTime;
+                }
+              }
               audio.play().catch(() => {
                 // Auto-play blocked, will need user interaction
               });
@@ -339,6 +431,7 @@ import { ViewTransitions } from "astro:transitions";
             });
             audio.addEventListener("loadeddata", tryResume, { once: true });
             audio.addEventListener("canplay", tryResume, { once: true });
+            audio.addEventListener("loadedmetadata", tryResume, { once: true });
           }
         }
       } else {
@@ -375,10 +468,15 @@ import { ViewTransitions } from "astro:transitions";
       const audio = window.__baocapAudio__;
       if (audio) {
         // Save currentTime more frequently to prevent loss during transitions
+        // Use lastKnownCurrentTime as fallback if currentTime was reset
+        const currentTimeToSave =
+          audio.currentTime > 0.5
+            ? audio.currentTime
+            : lastKnownCurrentTime || 0;
         const state = {
           isPlaying: !audio.paused,
           volume: audio.volume,
-          currentTime: audio.currentTime || 0, // Always save currentTime, even if 0
+          currentTime: currentTimeToSave, // Always save currentTime, use lastKnownCurrentTime if reset
         };
         saveAudioStateToStorage(state);
       }
@@ -566,6 +664,7 @@ import { ViewTransitions } from "astro:transitions";
               if (audio.readyState >= 2 && audio.duration > 0) {
                 if (state.currentTime < audio.duration) {
                   audio.currentTime = state.currentTime;
+                  lastKnownCurrentTime = state.currentTime;
                 }
               } else {
                 const setTime = () => {
@@ -574,6 +673,7 @@ import { ViewTransitions } from "astro:transitions";
                     state.currentTime < audio.duration
                   ) {
                     audio.currentTime = state.currentTime;
+                    lastKnownCurrentTime = state.currentTime;
                   }
                 };
                 audio.addEventListener("loadedmetadata", setTime, {
@@ -591,6 +691,7 @@ import { ViewTransitions } from "astro:transitions";
                     state.currentTime < audio.duration
                   ) {
                     audio.currentTime = state.currentTime;
+                    lastKnownCurrentTime = state.currentTime;
                   }
                 },
                 { once: true }
@@ -601,15 +702,21 @@ import { ViewTransitions } from "astro:transitions";
 
         restoreTimeImmediate();
 
+        // CRITICAL: Update lastKnownCurrentTime
+        if (state.currentTime) {
+          lastKnownCurrentTime = state.currentTime;
+        }
+
         // CRITICAL: If it was playing, resume IMMEDIATELY - ABSOLUTE NO DELAY
         if (state.isPlaying) {
-          // Ensure currentTime is set before playing
+          // Ensure currentTime is set before playing - CRITICAL!
           if (
             state.currentTime &&
             audio.readyState >= 2 &&
             audio.duration > 0
           ) {
             audio.currentTime = state.currentTime;
+            lastKnownCurrentTime = state.currentTime;
           }
 
           // Play immediately - NO conditions, NO checks, NO delays
@@ -737,16 +844,23 @@ import { ViewTransitions } from "astro:transitions";
         // Restore time immediately
         restoreTime();
 
+        // CRITICAL: Update lastKnownCurrentTime
+        if (state.currentTime) {
+          lastKnownCurrentTime = state.currentTime;
+        }
+
         // CRITICAL: If it was playing, resume IMMEDIATELY - ABSOLUTE NO DELAY
         if (state.isPlaying) {
-          // Ensure currentTime is set before playing
+          // Ensure currentTime is set before playing - CRITICAL!
           if (
             state.currentTime &&
             audio.readyState >= 2 &&
             audio.duration > 0
           ) {
             audio.currentTime = state.currentTime;
+            lastKnownCurrentTime = state.currentTime;
           }
+
           // Play immediately - NO conditions, NO checks, NO delays
           audio.play().catch(() => {});
           audio.play().catch(() => {});

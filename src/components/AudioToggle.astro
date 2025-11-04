@@ -149,16 +149,7 @@ import ambienceAudio from "../assets/music-for-victory-parade-1.mp3";
   </div>
 </div>
 
-<!-- Hidden Audio Element -->
-<audio
-  id="ambient-audio"
-  loop
-  preload="auto"
-  data-astro-transition-persist="audio-player"
->
-  <source src={ambienceAudio} type="audio/mpeg" />
-  Your browser does not support audio.
-</audio>
+<!-- Audio element is created in Layout.astro to ensure proper persistence -->
 
 <style>
   /* Custom Range Slider */

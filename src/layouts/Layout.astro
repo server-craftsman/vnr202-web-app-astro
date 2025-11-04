@@ -78,6 +78,36 @@ import { ViewTransitions } from "astro:transitions";
   // Persistent audio across ALL pages - runs immediately
   (function () {
     const AUDIO_KEY = "baocap_audio_state";
+    const AUDIO_KEY_SESSION = "baocap_audio_state_session";
+
+    // Helper function to get audio state from storage (localStorage with sessionStorage fallback)
+    function getAudioState() {
+      try {
+        const localState = localStorage.getItem(AUDIO_KEY);
+        if (localState) {
+          return JSON.parse(localState);
+        }
+      } catch (e) {}
+      
+      try {
+        const sessionState = sessionStorage.getItem(AUDIO_KEY_SESSION);
+        if (sessionState) {
+          return JSON.parse(sessionState);
+        }
+      } catch (e) {}
+      
+      return null;
+    }
+
+    // Helper function to save audio state to both storages
+    function saveAudioStateToStorage(state) {
+      try {
+        localStorage.setItem(AUDIO_KEY, JSON.stringify(state));
+      } catch (e) {}
+      try {
+        sessionStorage.setItem(AUDIO_KEY_SESSION, JSON.stringify(state));
+      } catch (e) {}
+    }
 
     // Check if audio already exists globally
     if (!window.__baocapAudio__) {
@@ -105,16 +135,10 @@ import { ViewTransitions } from "astro:transitions";
       // CRITICAL: Override pause method to prevent audio from ever pausing if it should be playing
       const originalPause = audio.pause.bind(audio);
       audio.pause = function () {
-        const savedState = localStorage.getItem(AUDIO_KEY);
-        if (savedState) {
-          try {
-            const state = JSON.parse(savedState);
-            // If audio should be playing, prevent pause
-            if (state.isPlaying) {
-              // Don't pause - just return immediately
-              return;
-            }
-          } catch (e) {}
+        const state = getAudioState();
+        if (state && state.isPlaying) {
+          // Don't pause - just return immediately
+          return;
         }
         // Only pause if user explicitly wants to pause (state.isPlaying = false)
         return originalPause();
@@ -123,17 +147,8 @@ import { ViewTransitions } from "astro:transitions";
       // Override load() to ensure it doesn't pause
       const originalLoad = audio.load.bind(audio);
       audio.load = function () {
-        const savedState = localStorage.getItem(AUDIO_KEY);
-        const wasPlaying = savedState
-          ? (() => {
-              try {
-                const state = JSON.parse(savedState);
-                return state.isPlaying;
-              } catch (e) {
-                return false;
-              }
-            })()
-          : false;
+        const state = getAudioState();
+        const wasPlaying = state ? state.isPlaying : false;
 
         originalLoad.call(this);
 
@@ -151,11 +166,8 @@ import { ViewTransitions } from "astro:transitions";
         e.preventDefault();
         e.stopImmediatePropagation();
 
-        const savedState = localStorage.getItem(AUDIO_KEY);
-        if (savedState) {
-          try {
-            const state = JSON.parse(savedState);
-            if (state.isPlaying) {
+        const state = getAudioState();
+        if (state && state.isPlaying) {
               // Resume IMMEDIATELY - NO DELAY AT ALL
               audio.play().catch(() => {});
               audio.play().catch(() => {});
@@ -208,19 +220,17 @@ import { ViewTransitions } from "astro:transitions";
         once: false,
       });
 
-      // Restore state from localStorage
-      const savedState = localStorage.getItem(AUDIO_KEY);
-      if (savedState) {
-        try {
-          const state = JSON.parse(savedState);
-          audio.volume = state.volume || 0.7;
+      // Restore state from storage (localStorage with sessionStorage fallback)
+      const state = getAudioState();
+      if (state) {
+        audio.volume = state.volume || 0.7;
 
-          if (state.currentTime && audio.duration > 0) {
-            audio.currentTime = state.currentTime;
-          }
+        if (state.currentTime && audio.duration > 0) {
+          audio.currentTime = state.currentTime;
+        }
 
-          // Restore playing state - try to auto-resume if it was playing
-          if (state.isPlaying) {
+        // Restore playing state - try to auto-resume if it was playing
+        if (state.isPlaying) {
             // Play immediately - no delays, no checks
             const tryResume = () => {
               if (audio && audio.paused) {
@@ -245,13 +255,34 @@ import { ViewTransitions } from "astro:transitions";
               audio.addEventListener("loadeddata", tryResume, { once: true });
             }
           }
-        } catch (e) {
-          console.log("Could not restore audio state:", e);
         }
       } else {
         // Default volume
         audio.volume = 0.7;
       }
+
+      // Add visibilitychange listener to resume audio when tab becomes visible
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && audio) {
+          const state = getAudioState();
+          if (state && state.isPlaying && audio.paused) {
+            // Resume audio when tab becomes visible if it should be playing
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+          }
+        }
+      });
+
+      // Add focus listener as backup
+      window.addEventListener("focus", () => {
+        if (audio) {
+          const state = getAudioState();
+          if (state && state.isPlaying && audio.paused) {
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+          }
+        }
+      });
     }
 
     // Save state periodically and before unload
@@ -263,7 +294,7 @@ import { ViewTransitions } from "astro:transitions";
           volume: audio.volume,
           currentTime: audio.currentTime,
         };
-        localStorage.setItem(AUDIO_KEY, JSON.stringify(state));
+        saveAudioStateToStorage(state);
       }
     }
 
@@ -280,16 +311,10 @@ import { ViewTransitions } from "astro:transitions";
       const audio = window.__baocapAudio__;
       if (!audio) return;
 
-      const savedState = localStorage.getItem(AUDIO_KEY);
-      if (savedState) {
-        try {
-          const state = JSON.parse(savedState);
-          // If audio should be playing but is paused, resume immediately
-          if (state.isPlaying && audio.paused) {
-            // Resume immediately - no delay
-            audio.play().catch(() => {});
-          }
-        } catch (e) {}
+      const state = getAudioState();
+      if (state && state.isPlaying && audio.paused) {
+        // Resume immediately - no delay
+        audio.play().catch(() => {});
       }
     }, 100); // Check every 100ms to ensure continuous playback
 
@@ -301,17 +326,12 @@ import { ViewTransitions } from "astro:transitions";
     if (window.__baocapAudio__) {
       const audio = window.__baocapAudio__;
       const observer = new MutationObserver((mutations) => {
-        const savedState = localStorage.getItem(AUDIO_KEY);
-        if (savedState) {
-          try {
-            const state = JSON.parse(savedState);
-            if (state.isPlaying && audio.paused) {
-              // Resume immediately if audio was paused during mutation
-              audio.play().catch(() => {});
-              audio.play().catch(() => {});
-              audio.play().catch(() => {});
-            }
-          } catch (e) {}
+        const state = getAudioState();
+        if (state && state.isPlaying && audio.paused) {
+          // Resume immediately if audio was paused during mutation
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
         }
       });
 
@@ -328,11 +348,11 @@ import { ViewTransitions } from "astro:transitions";
       // Save state right before page transition
       const audio = window.__baocapAudio__;
       if (audio) {
-        const savedState = localStorage.getItem(AUDIO_KEY);
-        if (savedState) {
-          try {
-            const state = JSON.parse(savedState);
-            if (state.isPlaying) {
+        // Save current state immediately
+        saveAudioState();
+        
+        const state = getAudioState();
+        if (state && state.isPlaying) {
               // CRITICAL: Ensure audio continues playing DURING transition
               // Don't let it pause at all
               if (audio.paused) {
@@ -420,11 +440,7 @@ import { ViewTransitions } from "astro:transitions";
                 { once: true }
               );
             }
-          } catch (e) {}
         }
-
-        // Save current state
-        saveAudioState();
       }
     });
 
@@ -433,10 +449,8 @@ import { ViewTransitions } from "astro:transitions";
       const audio = window.__baocapAudio__;
       if (!audio) return;
 
-      const savedState = localStorage.getItem(AUDIO_KEY);
-      if (savedState) {
-        try {
-          const state = JSON.parse(savedState);
+      const state = getAudioState();
+      if (state) {
 
           // Restore volume immediately
           audio.volume = state.volume || 0.7;
@@ -494,7 +508,7 @@ import { ViewTransitions } from "astro:transitions";
               );
             }
           }
-        } catch (e) {}
+        }
       }
     }
 
@@ -526,10 +540,8 @@ import { ViewTransitions } from "astro:transitions";
       if (!audio) return;
 
       // IMMEDIATELY restore audio - ABSOLUTE NO DELAY, NO WAITING
-      const savedState = localStorage.getItem(AUDIO_KEY);
-      if (savedState) {
-        try {
-          const state = JSON.parse(savedState);
+      const state = getAudioState();
+      if (state) {
 
           // Restore volume immediately
           audio.volume = state.volume || 0.7;
@@ -566,26 +578,18 @@ import { ViewTransitions } from "astro:transitions";
               }
             });
           }
-        } catch (e) {
-          console.log("Could not restore audio on page load:", e);
         }
-      }
 
       // Continuous monitoring to ensure audio keeps playing
       const checkAndResume = () => {
         const audio = window.__baocapAudio__;
         if (!audio) return;
 
-        const savedState = localStorage.getItem(AUDIO_KEY);
-        if (savedState) {
-          try {
-            const state = JSON.parse(savedState);
-            // If audio should be playing but is paused, resume immediately
-            if (state.isPlaying && audio.paused) {
-              // Resume immediately - no delay
-              audio.play().catch(() => {});
-            }
-          } catch (e) {}
+        const state = getAudioState();
+        // If audio should be playing but is paused, resume immediately
+        if (state && state.isPlaying && audio.paused) {
+          // Resume immediately - no delay
+          audio.play().catch(() => {});
         }
       };
 
@@ -598,17 +602,8 @@ import { ViewTransitions } from "astro:transitions";
       const monitorInterval = setInterval(() => {
         checkAndResume();
         // Stop monitoring if audio is not supposed to be playing
-        const savedState = localStorage.getItem(AUDIO_KEY);
-        if (savedState) {
-          try {
-            const state = JSON.parse(savedState);
-            if (!state.isPlaying) {
-              clearInterval(monitorInterval);
-            }
-          } catch (e) {
-            clearInterval(monitorInterval);
-          }
-        } else {
+        const state = getAudioState();
+        if (!state || !state.isPlaying) {
           clearInterval(monitorInterval);
         }
       }, 50); // Check every 50ms on page load to catch any immediate pauses
@@ -679,7 +674,7 @@ import { ViewTransitions } from "astro:transitions";
             volume: volume,
             currentTime: currentTime,
           };
-          localStorage.setItem("baocap_audio_state", JSON.stringify(state));
+          saveAudioStateToStorage(state);
 
           // If audio was playing, ensure it continues during navigation
           if (wasPlaying) {

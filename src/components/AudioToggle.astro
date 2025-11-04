@@ -222,6 +222,36 @@ import ambienceAudio from "../assets/music-for-victory-parade-1.mp3";
   let volumeTimeout: number | null = null;
   const INITIAL_VOLUME = 70;
   const AUDIO_KEY = "baocap_audio_state";
+  const AUDIO_KEY_SESSION = "baocap_audio_state_session";
+
+  // Helper function to get audio state from storage (localStorage with sessionStorage fallback)
+  function getAudioState() {
+    try {
+      const localState = localStorage.getItem(AUDIO_KEY);
+      if (localState) {
+        return JSON.parse(localState);
+      }
+    } catch (e) {}
+
+    try {
+      const sessionState = sessionStorage.getItem(AUDIO_KEY_SESSION);
+      if (sessionState) {
+        return JSON.parse(sessionState);
+      }
+    } catch (e) {}
+
+    return null;
+  }
+
+  // Helper function to save audio state to both storages
+  function saveAudioStateToStorage(state: any) {
+    try {
+      localStorage.setItem(AUDIO_KEY, JSON.stringify(state));
+    } catch (e) {}
+    try {
+      sessionStorage.setItem(AUDIO_KEY_SESSION, JSON.stringify(state));
+    } catch (e) {}
+  }
 
   // Wait for audio to be created by Layout.astro
   function initAudioControls() {
@@ -232,10 +262,9 @@ import ambienceAudio from "../assets/music-for-victory-parade-1.mp3";
       return;
     }
 
-    // Restore UI state from localStorage
-    const savedState = localStorage.getItem(AUDIO_KEY);
-    if (savedState) {
-      const state = JSON.parse(savedState);
+    // Restore UI state from storage (localStorage with sessionStorage fallback)
+    const state = getAudioState();
+    if (state) {
       const savedVolume = Math.round((state.volume || 0.7) * 100);
 
       if (volumeSlider) {
@@ -414,78 +443,91 @@ import ambienceAudio from "../assets/music-for-victory-parade-1.mp3";
       window.__baocapAudio__ ||
       (document.getElementById("ambient-audio") as HTMLAudioElement);
     if (audio) {
-      const savedState = localStorage.getItem(AUDIO_KEY);
-      if (savedState) {
-        try {
-          const state = JSON.parse(savedState);
-          // Restore volume
-          if (state.volume) {
-            audio.volume = state.volume;
-          }
-          // Restore current time immediately if valid
-          if (
-            state.currentTime &&
-            audio.duration > 0 &&
-            state.currentTime < audio.duration
-          ) {
-            audio.currentTime = state.currentTime;
-          }
-          // Try to resume if it was playing (immediately, ABSOLUTE NO DELAY)
-          if (state.isPlaying) {
-            // Resume IMMEDIATELY - play multiple times to ensure it works
-            audio.play().catch(() => {});
-            audio.play().catch(() => {});
-            audio.play().catch(() => {});
+      const state = getAudioState();
+      if (state) {
+        // Restore volume
+        if (state.volume) {
+          audio.volume = state.volume;
+        }
+        // Restore current time immediately if valid
+        if (
+          state.currentTime &&
+          audio.duration > 0 &&
+          state.currentTime < audio.duration
+        ) {
+          audio.currentTime = state.currentTime;
+        }
+        // Try to resume if it was playing (immediately, ABSOLUTE NO DELAY)
+        if (state.isPlaying) {
+          // Resume IMMEDIATELY - play multiple times to ensure it works
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
+          audio.play().catch(() => {});
 
-            // Use setTimeout(0) to ensure it plays after any blocking
-            setTimeout(() => {
-              if (audio.paused && state.isPlaying) {
-                audio.play().catch(() => {});
-              }
-            }, 0);
-
-            // Also use requestAnimationFrame
-            requestAnimationFrame(() => {
-              if (audio.paused && state.isPlaying) {
-                audio.play().catch(() => {});
-              }
-            });
-
-            // Update state immediately
-            isPlaying = !audio.paused;
-            // Update UI to reflect actual state immediately
-            if (isPlaying) {
-              updateUI();
+          // Use setTimeout(0) to ensure it plays after any blocking
+          setTimeout(() => {
+            if (audio.paused && state.isPlaying) {
+              audio.play().catch(() => {});
             }
+          }, 0);
 
-            // Continuous monitoring for this page - ULTRA AGGRESSIVE
-            const monitorInterval = setInterval(() => {
-              if (audio.paused && state.isPlaying) {
-                // Try MANY times to ensure it works
-                audio.play().catch(() => {});
-                audio.play().catch(() => {});
-                audio.play().catch(() => {});
-                audio.play().catch(() => {});
-                audio.play().catch(() => {});
-              }
-              // Stop if user pauses manually (state changed)
-              const currentState = localStorage.getItem(AUDIO_KEY);
-              if (currentState) {
-                try {
-                  const current = JSON.parse(currentState);
-                  if (!current.isPlaying) {
-                    clearInterval(monitorInterval);
-                  }
-                } catch (e) {
-                  clearInterval(monitorInterval);
-                }
-              }
-            }, 5); // Check every 5ms for MAXIMUM RESPONSIVENESS
+          // Also use requestAnimationFrame
+          requestAnimationFrame(() => {
+            if (audio.paused && state.isPlaying) {
+              audio.play().catch(() => {});
+            }
+          });
+
+          // Update state immediately
+          isPlaying = !audio.paused;
+          // Update UI to reflect actual state immediately
+          if (isPlaying) {
+            updateUI();
           }
-        } catch (e) {
-          console.log("Could not restore audio state:", e);
+
+          // Continuous monitoring for this page - ULTRA AGGRESSIVE
+          const monitorInterval = setInterval(() => {
+            if (audio.paused && state.isPlaying) {
+              // Try MANY times to ensure it works
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+              audio.play().catch(() => {});
+            }
+            // Stop if user pauses manually (state changed)
+            const currentState = getAudioState();
+            if (!currentState || !currentState.isPlaying) {
+              clearInterval(monitorInterval);
+            }
+          }, 5); // Check every 5ms for MAXIMUM RESPONSIVENESS
         }
       }
+    }
+
+    // Add visibilitychange listener to resume audio when tab becomes visible
+    if (audio) {
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && audio) {
+          const state = getAudioState();
+          if (state && state.isPlaying && audio.paused) {
+            // Resume audio when tab becomes visible if it should be playing
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+          }
+        }
+      });
+
+      // Add focus listener as backup
+      window.addEventListener("focus", () => {
+        if (audio) {
+          const state = getAudioState();
+          if (state && state.isPlaying && audio.paused) {
+            audio.play().catch(() => {});
+            audio.play().catch(() => {});
+          }
+        }
+      });
     }
   });
 
@@ -574,13 +616,16 @@ import ambienceAudio from "../assets/music-for-victory-parade-1.mp3";
     if (isPlaying) {
       // Pause audio - but only if user explicitly wants to pause
       // Update state first to allow pause
-      const currentState = localStorage.getItem(AUDIO_KEY);
+      const currentState = getAudioState();
       if (currentState) {
-        try {
-          const state = JSON.parse(currentState);
-          state.isPlaying = false;
-          localStorage.setItem(AUDIO_KEY, JSON.stringify(state));
-        } catch (e) {}
+        currentState.isPlaying = false;
+        saveAudioStateToStorage(currentState);
+      } else {
+        saveAudioStateToStorage({
+          isPlaying: false,
+          volume: audio.volume,
+          currentTime: audio.currentTime,
+        });
       }
       audio.pause();
       volumeOn?.classList.add("hidden");
@@ -635,7 +680,7 @@ import ambienceAudio from "../assets/music-for-victory-parade-1.mp3";
         volume: audio.volume,
         currentTime: audio.currentTime,
       };
-      localStorage.setItem(AUDIO_KEY, JSON.stringify(state));
+      saveAudioStateToStorage(state);
     }
   }
 
